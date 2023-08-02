@@ -1,9 +1,13 @@
 [package]
 name = "spotify-rs"
-version = "0.1.0"
-edition = "2021"
+version = "0.1.1"
+categories = [""]
 description = "A Rust wrapper for the Discord API."
+edition = "2021"
 license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/Bogpan/spotify-rs"
+documentation = "https://docs.rs/spotify-rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

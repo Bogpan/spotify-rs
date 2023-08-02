@@ -1,0 +1,17 @@
+[package]
+name = "spotify-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_repr = "0.1"
+reqwest = { version = "0.11", features = ["json"] }
+base64 = "0.21"
+rand = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+oauth2 = "4.4"
+thiserror = "1.0"

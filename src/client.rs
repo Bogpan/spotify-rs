@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash};
+use std::{collections::HashMap, hash::Hash, marker::PhantomData};
 
 use oauth2::{
     basic::{
@@ -8,15 +8,16 @@ use oauth2::{
     reqwest::async_http_client,
     AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, RedirectUrl, StandardRevocableToken,
 };
-use reqwest::{Method, RequestBuilder};
+use reqwest::{Method, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::{
     auth::{AuthCodeGrantPKCEFlow, AuthFlow, Authorisation, Authorised, Scope, Token},
-    error::Error,
+    error::{Error, SpotifyError},
     model::{
-        album::{Album, SavedAlbum},
+        album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
+        track::SimplifiedTrack,
         Page,
     },
     Result,
@@ -37,29 +38,29 @@ fn query_map<K: Hash + Eq, V, const N: usize>(queries: [Option<(K, V)>; N]) -> H
 
 #[derive(Debug)]
 pub struct Client<F: AuthFlow> {
-    pub flow: F,
     pub auto_refresh: bool,
     pub(crate) token: Option<Token>,
     pub(crate) oauth: OAuthClient,
     pub(crate) http: reqwest::Client,
+    marker: PhantomData<F>,
 }
 
 impl<F: AuthFlow + Sync> Client<F> {
-    pub fn new(flow: F, redirect_uri: RedirectUrl, auto_refresh: bool) -> Client<F> {
+    pub fn new(auth_flow: F, redirect_uri: RedirectUrl, auto_refresh: bool) -> Client<F> {
         let oauth_client = OAuthClient::new(
-            flow.client_id(),
-            flow.client_secret(),
+            auth_flow.client_id(),
+            auth_flow.client_secret(),
             AuthUrl::new("https://accounts.spotify.com/authorize".to_owned()).unwrap(),
-            flow.token_url(),
+            auth_flow.token_url(),
         )
         .set_redirect_uri(redirect_uri);
 
         Client {
-            token: None,
-            flow,
             auto_refresh,
+            token: None,
             oauth: oauth_client,
             http: reqwest::Client::new(),
+            marker: PhantomData,
         }
     }
 
@@ -144,55 +145,121 @@ impl<F: AuthFlow + Sync> Client<F> {
             .await?)
     }
 
-    async fn post<Q: Serialize + ?Sized, T: DeserializeOwned>(
+    async fn post<Q: Serialize + ?Sized>(
         &mut self,
         endpoint: &str,
         query: Option<&Q>,
         json: Option<Value>,
-    ) -> Result<T> {
-        Ok(self
+    ) -> Result<()> {
+        let res = self
             .request(Method::POST, endpoint, query, &json)
             .await?
             .send()
-            .await?
-            .json()
-            .await?)
+            .await?;
+
+        if res.status().is_success() {
+            Ok(())
+        } else {
+            Err(res.json::<SpotifyError>().await?.into())
+        }
     }
 
-    async fn put<Q: Serialize + ?Sized, T: DeserializeOwned>(
+    async fn put<Q: Serialize + ?Sized>(
         &mut self,
         endpoint: &str,
         query: Option<&Q>,
         json: Option<Value>,
-    ) -> Result<T> {
-        Ok(self
+    ) -> Result<()> {
+        let res = self
             .request(Method::PUT, endpoint, query, &json)
             .await?
             .send()
-            .await?
-            .json()
-            .await?)
+            .await?;
+
+        if res.status().is_success() {
+            Ok(())
+        } else {
+            Err(res.json::<SpotifyError>().await?.into())
+        }
     }
 
-    async fn delete<Q: Serialize + ?Sized, T: DeserializeOwned>(
+    async fn delete<Q: Serialize + ?Sized>(
         &mut self,
         endpoint: &str,
         query: Option<&Q>,
         json: Option<Value>,
-    ) -> Result<T> {
-        Ok(self
+    ) -> Result<()> {
+        let res = self
             .request(Method::DELETE, endpoint, query, &json)
             .await?
             .send()
-            .await?
-            .json()
-            .await?)
+            .await?;
+
+        if res.status().is_success() {
+            Ok(())
+        } else {
+            Err(res.json::<SpotifyError>().await?.into())
+        }
     }
 
-    pub async fn get_album(&mut self, id: &str, market: Option<&str>) -> Result<Album> {
+    pub async fn get_album(&mut self, album_id: &str, market: Option<&str>) -> Result<Album> {
         let market = market.map(|m| [("market", m)]);
-        self.get(&format!("/albums/{id}"), market.as_ref(), None)
+        self.get(&format!("/albums/{album_id}"), market.as_ref(), None)
             .await
+    }
+
+    pub async fn get_albums(
+        &mut self,
+        album_ids: &[&str],
+        market: Option<&str>,
+    ) -> Result<Vec<Album>> {
+        let mut query = HashMap::from([("ids", album_ids.join(","))]);
+
+        if let Some(market) = market {
+            query.insert("market", market.to_owned());
+        }
+
+        self.get("/albums/", Some(&query), None)
+            .await
+            .map(|a: Albums| a.albums)
+    }
+
+    pub async fn get_album_tracks(
+        &mut self,
+        album_id: &str,
+        market: Option<&str>,
+        limit: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<Page<SimplifiedTrack>> {
+        let limit = limit.map(|l| ("limit", l.to_string()));
+        let offset = offset.map(|o| ("offset", o.to_string()));
+        let market = market.map(|m| ("market", m.to_string()));
+
+        self.get(
+            &format!("/albums/{album_id}/tracks"),
+            Some(&query_map([market, offset, limit])),
+            None,
+        )
+        .await
+    }
+
+    pub async fn get_new_releases(
+        &mut self,
+        country: Option<&str>,
+        limit: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<Page<SimplifiedAlbum>> {
+        let country = country.map(|m| ("country", m.to_string()));
+        let limit = limit.map(|l| ("limit", l.to_string()));
+        let offset = offset.map(|o| ("offset", o.to_string()));
+
+        self.get(
+            "/browse/new-releases/",
+            Some(&query_map([country, limit, offset])),
+            None,
+        )
+        .await
+        .map(|a: PagedAlbums| a.albums)
     }
 }
 
@@ -210,6 +277,25 @@ impl<F: AuthFlow + Authorised + Sync> Client<F> {
         self.get(
             "/me/albums",
             Some(&query_map([limit, offset, market])),
+            None,
+        )
+        .await
+    }
+
+    pub async fn save_albums(&mut self, album_ids: &[&str]) -> Result<()> {
+        self.put::<()>("/me/albums/", None, Some(json!({ "ids": album_ids })))
+            .await
+    }
+
+    pub async fn remove_saved_albums(&mut self, album_ids: &[&str]) -> Result<()> {
+        self.delete::<()>("/me/albums/", None, Some(json!({ "ids": album_ids })))
+            .await
+    }
+
+    pub async fn check_saved_albums(&mut self, album_ids: &[&str]) -> Result<Vec<bool>> {
+        self.get(
+            "/me/albums/contains",
+            Some(&[("ids", album_ids.join(","))]),
             None,
         )
         .await

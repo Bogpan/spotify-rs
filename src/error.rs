@@ -1,4 +1,6 @@
 use oauth2::{basic::BasicErrorResponseType, RequestTokenError, StandardErrorResponse};
+
+use serde::Deserialize;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Error)]
@@ -22,6 +24,20 @@ pub enum Error {
 
     #[error("The access token has has expired and refreshing it is not available in the current authorisation flow.")]
     RefreshUnavailable,
+
+    #[error("Error returned from the Spotify API: {status} {message}")]
+    Spotify { status: u16, message: String },
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SpotifyError {
+    error: Details,
+}
+
+#[derive(Deserialize)]
+struct Details {
+    status: u16,
+    message: String,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -80,5 +96,14 @@ impl
 impl From<reqwest::Error> for Error {
     fn from(value: reqwest::Error) -> Self {
         Self::Http(value.to_string())
+    }
+}
+
+impl From<SpotifyError> for Error {
+    fn from(value: SpotifyError) -> Self {
+        Self::Spotify {
+            status: value.error.status,
+            message: value.error.message,
+        }
     }
 }

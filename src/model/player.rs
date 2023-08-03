@@ -29,12 +29,11 @@ pub struct Device {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Devices {
-    pub devices: Vec<Device>,
+pub(crate) struct Devices {
+    pub(crate) devices: Vec<Device>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-
 pub struct Context {
     pub r#type: String,
     pub href: String,

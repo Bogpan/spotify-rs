@@ -55,6 +55,16 @@ pub struct SavedAlbum {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub(crate) struct Albums {
+    pub(crate) albums: Vec<Album>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub(crate) struct PagedAlbums {
+    pub(crate) albums: Page<SimplifiedAlbum>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AlbumType {
     Album,

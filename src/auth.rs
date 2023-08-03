@@ -17,6 +17,9 @@ pub trait AuthFlow {
 }
 
 pub trait Authorised {}
+impl Authorised for AuthCodeGrantPKCEFlow {}
+impl Authorised for AuthCodeGrantFlow {}
+impl Authorised for ImplicitGrantFlow {}
 
 #[derive(Clone, Debug)]
 pub struct AuthCodeGrantPKCEFlow {
@@ -39,10 +42,6 @@ pub struct ClientCredsGrantFlow {
 pub struct ImplicitGrantFlow {
     pub client_id: String,
 }
-
-impl Authorised for AuthCodeGrantPKCEFlow {}
-impl Authorised for AuthCodeGrantFlow {}
-impl Authorised for ImplicitGrantFlow {}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Token {

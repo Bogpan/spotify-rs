@@ -1,6 +1,6 @@
 [package]
 name = "spotify-rs"
-version = "0.1.1"
+version = "0.1.2"
 categories = [""]
 description = "A Rust wrapper for the Discord API."
 edition = "2021"

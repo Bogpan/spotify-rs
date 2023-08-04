@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::{track::Track, *};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PlaybackState {
     pub device: Option<Device>,
     pub repeat_state: Option<RepeatState>,
@@ -17,7 +17,7 @@ pub struct PlaybackState {
     pub actions: Actions,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Device {
     pub id: Option<String>,
     pub is_active: bool,
@@ -28,12 +28,12 @@ pub struct Device {
     pub volume_percent: Option<u32>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Devices {
     pub(crate) devices: Vec<Device>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Context {
     pub r#type: String,
     pub href: String,
@@ -42,12 +42,12 @@ pub struct Context {
 }
 
 /// Allows to update the user interface based on which playback actions are available within the current context.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Actions {
     pub disallows: Disallows,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Disallows {
     pub interrupting_playback: Option<bool>,
     pub pausing: Option<bool>,
@@ -61,20 +61,20 @@ pub struct Disallows {
     pub transferring_playback: Option<bool>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PlayHistory {
     pub track: Track,
     pub played_at: DateTime<Utc>,
     pub context: Option<Context>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Queue {
     pub currently_playing: Option<PlayableItem>,
     pub queue: Vec<PlayableItem>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct CurrentlyPlayingTrack {
     pub context: Option<Context>,
     pub timestamp: u64,
@@ -85,7 +85,7 @@ pub struct CurrentlyPlayingTrack {
     pub actions: Actions,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RepeatState {
     Off,
@@ -93,7 +93,7 @@ pub enum RepeatState {
     Context,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CurrentlyPlayingType {
     Track,

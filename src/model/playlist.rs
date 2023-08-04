@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::{user::ReferenceUser, *};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Playlist {
     pub collaborative: bool,
     pub description: Option<String>,
@@ -21,7 +21,7 @@ pub struct Playlist {
     pub uri: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct SimplifiedPlaylist {
     pub collaborative: bool,
     pub description: Option<String>,
@@ -40,7 +40,7 @@ pub struct SimplifiedPlaylist {
     pub uri: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PlaylistedTrack {
     /// The date and time the track or episode was added. Note: some very old playlists may return null in this field.
     pub added_at: Option<DateTime<Utc>>,
@@ -52,7 +52,7 @@ pub struct PlaylistedTrack {
 
 /// A collection containing a link (`href`) to the Web API endpoint where full details of the playlist's tracks can be retrieved,
 /// along with the total number of tracks in the playlist. Note, a track object may be `null`. This can happen if a track is no longer available.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct TrackReference {
     pub href: String,
     pub total: u32,

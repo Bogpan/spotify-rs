@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::{album::SimplifiedAlbum, artist::SimplifiedArtist, *};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Track {
     pub album: SimplifiedAlbum,
@@ -29,7 +29,7 @@ pub struct Track {
     pub is_local: bool,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SimplifiedTrack {
     pub artists: Vec<SimplifiedArtist>,
@@ -52,14 +52,14 @@ pub struct SimplifiedTrack {
     pub is_local: bool,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SavedTrack {
     pub added_at: DateTime<Utc>,
     pub track: Vec<Track>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct LinkedFrom {
     pub external_urls: ExternalUrls,

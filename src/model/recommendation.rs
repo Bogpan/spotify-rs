@@ -1,14 +1,14 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::track::Track;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Recommendations {
     pub seeds: Vec<RecommendationSeed>,
     pub tracks: Vec<Track>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct RecommendationSeed {
     pub after_filtering_size: u32,
     pub after_relinking_size: u32,

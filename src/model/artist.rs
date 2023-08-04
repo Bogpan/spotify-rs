@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::*;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Artist {
     pub external_urls: ExternalUrls,
     pub followers: Followers,
@@ -16,7 +16,7 @@ pub struct Artist {
     pub uri: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct SimplifiedArtist {
     pub external_urls: ExternalUrls,
     pub href: String,

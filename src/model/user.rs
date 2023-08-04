@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::*;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PrivateUser {
     pub country: String,
     pub display_name: Option<String>,
@@ -20,7 +20,7 @@ pub struct PrivateUser {
     pub uri: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct User {
     pub display_name: Option<String>,
     pub external_urls: ExternalUrls,
@@ -33,7 +33,7 @@ pub struct User {
 }
 
 // Returned by the get/playlist/{id} endpoint; also called "PlaylistUserObject" in the schema
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct ReferenceUser {
     pub external_urls: ExternalUrls,
     pub followers: Option<Followers>,
@@ -44,7 +44,7 @@ pub struct ReferenceUser {
     pub display_name: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct ExplicitContent {
     pub filter_enabled: bool,
     pub filter_locked: bool,

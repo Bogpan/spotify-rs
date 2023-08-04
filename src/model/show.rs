@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::*;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Show {
     #[serde(default)]
     pub available_markets: Vec<String>,
@@ -26,7 +26,7 @@ pub struct Show {
     pub episodes: Page<SimplifiedEpisode>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct SimplifiedShow {
     #[serde(default)]
     pub available_markets: Vec<String>,
@@ -48,13 +48,13 @@ pub struct SimplifiedShow {
     pub total_episodes: u32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct SavedShow {
     added_at: DateTime<Utc>,
     show: SimplifiedShow,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Episode {
     pub audio_preview_url: Option<String>,
     pub description: String,
@@ -78,7 +78,7 @@ pub struct Episode {
     pub show: SimplifiedShow,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct SimplifiedEpisode {
     pub audio_preview_url: Option<String>,
     pub description: String,

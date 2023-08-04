@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_repr::*;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct AudioFeatures {
     pub acousticness: f32,
     pub analysis_url: String,
@@ -25,7 +25,7 @@ pub struct AudioFeatures {
     pub valence: f32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct AudioAnalysis {
     pub meta: Meta,
     pub track: TrackAnalysis,
@@ -36,7 +36,7 @@ pub struct AudioAnalysis {
     pub tatums: Vec<Tatum>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Meta {
     pub analyzer_version: String,
     pub platform: String,
@@ -48,7 +48,7 @@ pub struct Meta {
     pub input_process: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct TrackAnalysis {
     pub num_samples: u32,
     pub duration: f32,
@@ -79,21 +79,21 @@ pub struct TrackAnalysis {
     pub rhythm_version: f32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Bar {
     pub start: f32,
     pub duration: f32,
     pub confidence: f32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Beat {
     pub start: f32,
     pub duration: f32,
     pub confidence: f32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Section {
     pub start: f32,
     pub duration: f32,
@@ -109,7 +109,7 @@ pub struct Section {
     pub time_signature_confidence: f32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Segment {
     pub start: f32,
     pub duration: f32,
@@ -122,14 +122,14 @@ pub struct Segment {
     pub timbre: Vec<f32>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Tatum {
     pub start: f32,
     pub duration: f32,
     pub confidence: f32,
 }
 
-#[derive(Clone, Copy, Debug, Serialize_repr, Deserialize_repr)]
+#[derive(Clone, Copy, Debug, Deserialize_repr)]
 #[repr(u8)]
 pub enum Mode {
     Minor,

@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::*;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Audiobook {
     pub authors: Vec<Author>,
     #[serde(default)]
@@ -27,7 +27,7 @@ pub struct Audiobook {
     pub chapters: Page<SimplifiedChapter>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct SimplifiedAudiobook {
     pub authors: Vec<Author>,
     #[serde(default)]
@@ -51,7 +51,7 @@ pub struct SimplifiedAudiobook {
     pub total_chapters: u32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Chapter {
     pub audio_preview_url: Option<String>,
     #[serde(default)]
@@ -77,7 +77,7 @@ pub struct Chapter {
     pub audiobook: SimplifiedAudiobook,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct SimplifiedChapter {
     pub audio_preview_url: Option<String>,
     #[serde(default)]
@@ -102,12 +102,12 @@ pub struct SimplifiedChapter {
     pub restrictions: Option<Restrictions>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Author {
     pub name: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Narrator {
     pub name: String,
 }

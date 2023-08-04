@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::{artist::SimplifiedArtist, track::SimplifiedTrack, *};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Album {
     pub album_type: AlbumType,
     pub total_tracks: u32,
@@ -27,7 +27,7 @@ pub struct Album {
     pub tracks: Page<SimplifiedTrack>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct SimplifiedAlbum {
     pub album_type: AlbumType,
     pub total_tracks: u32,
@@ -48,23 +48,23 @@ pub struct SimplifiedAlbum {
     pub artists: Vec<SimplifiedArtist>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct SavedAlbum {
     pub added_at: DateTime<Utc>,
     pub album: Album,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Albums {
     pub(crate) albums: Vec<Album>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) struct PagedAlbums {
     pub(crate) albums: Page<SimplifiedAlbum>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AlbumType {
     Album,
@@ -72,7 +72,7 @@ pub enum AlbumType {
     Compilation,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AlbumGroup {
     Album,

@@ -5,7 +5,7 @@ use oauth2::{
         BasicErrorResponse, BasicRevocationErrorResponse, BasicTokenIntrospectionResponse,
         BasicTokenType,
     },
-    reqwest::{async_http_client, AsyncHttpClientError},
+    reqwest::async_http_client,
     AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, RedirectUrl, StandardRevocableToken,
 };
 use reqwest::{Method, RequestBuilder};
@@ -14,8 +14,8 @@ use serde_json::{json, Value};
 
 use crate::{
     auth::{
-        AuthCodeGrantFlow, AuthCodeGrantPKCEFlow, AuthFlow, Authorisation, AuthorisationPKCE,
-        Authorised, Scope, Token,
+        AuthCodeGrantFlow, AuthCodeGrantPKCEFlow, AuthFlow, AuthenticationState, Authorisation,
+        AuthorisationPKCE, Authorised, Scope, Token, UnAuthenticated,
     },
     error::{Error, SpotifyError},
     model::{
@@ -37,16 +37,20 @@ pub(crate) type OAuthClient = oauth2::Client<
 >;
 
 #[derive(Debug)]
-pub struct Client<F: AuthFlow> {
+pub struct Client<A: AuthenticationState, F: AuthFlow> {
     pub auto_refresh: bool,
-    pub(crate) token: Option<Token>,
+    pub(crate) auth: A,
     pub(crate) oauth: OAuthClient,
     pub(crate) http: reqwest::Client,
     marker: PhantomData<F>,
 }
 
-impl<F: AuthFlow> Client<F> {
-    pub fn new(auth_flow: F, redirect_uri: RedirectUrl, auto_refresh: bool) -> Client<F> {
+impl<F: AuthFlow> Client<UnAuthenticated, F> {
+    pub fn new(
+        auth_flow: F,
+        redirect_uri: RedirectUrl,
+        auto_refresh: bool,
+    ) -> Client<UnAuthenticated, F> {
         let oauth_client = OAuthClient::new(
             auth_flow.client_id(),
             auth_flow.client_secret(),
@@ -57,30 +61,28 @@ impl<F: AuthFlow> Client<F> {
 
         Client {
             auto_refresh,
-            token: None,
+            auth: UnAuthenticated,
             oauth: oauth_client,
             http: reqwest::Client::new(),
             marker: PhantomData,
         }
     }
+}
 
-    pub fn access_token(&self) -> Option<&String> {
-        self.token.as_ref().map(|t| t.access_token.secret())
+impl<F: AuthFlow> Client<Token, F> {
+    pub fn access_token(&self) -> &str {
+        self.auth.access_token.secret()
     }
 
-    pub fn refresh_token(&self) -> Option<&String> {
-        self.token
+    pub fn refresh_token(&self) -> Option<&str> {
+        self.auth
+            .refresh_token
             .as_ref()
-            .and_then(|t| t.refresh_token.as_ref())
-            .map(|t| t.secret())
+            .map(|t| t.secret().as_str())
     }
 
     pub async fn request_refresh_token(&mut self) -> Result<()> {
-        let Some(token) = &self.token else {
-            return Err(Error::NotAuthenticated)
-        };
-
-        let Some(refresh_token) = &token.refresh_token else {
+        let Some(refresh_token) = &self.auth.refresh_token else {
             return Err(Error::RefreshUnavailable);
         };
 
@@ -91,7 +93,7 @@ impl<F: AuthFlow> Client<F> {
             .await?
             .set_timestamps();
 
-        self.token = Some(token);
+        self.auth = token;
         Ok(())
     }
 
@@ -102,11 +104,7 @@ impl<F: AuthFlow> Client<F> {
         query: Option<Q>,
         json: Option<Value>,
     ) -> Result<RequestBuilder> {
-        let Some(token) = &self.token else {
-            return Err(Error::NotAuthenticated)
-        };
-
-        if token.is_expired() {
+        if self.auth.is_expired() {
             if self.auto_refresh {
                 self.request_refresh_token().await?
             }
@@ -117,7 +115,7 @@ impl<F: AuthFlow> Client<F> {
         let mut req = self
             .http
             .request(method, format!("https://api.spotify.com/v1{endpoint}"))
-            .bearer_auth(token.access_token.secret());
+            .bearer_auth(self.auth.access_token.secret());
 
         if let Some(q) = query {
             req = req.query(&q);
@@ -231,7 +229,7 @@ impl<F: AuthFlow> Client<F> {
     }
 }
 
-impl<F: AuthFlow + Authorised + Sync> Client<F> {
+impl<F: AuthFlow + Authorised> Client<Token, F> {
     pub async fn get_saved_albums(&mut self, query: SavedAlbumsQuery) -> Result<Page<SavedAlbum>> {
         self.get("/me/albums", query, None).await
     }
@@ -252,7 +250,7 @@ impl<F: AuthFlow + Authorised + Sync> Client<F> {
     }
 }
 
-impl Client<AuthCodeGrantPKCEFlow> {
+impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
     pub fn get_authorisation<I: IntoIterator>(&self, scopes: I) -> AuthorisationPKCE
     where
         I::Item: Into<Scope>,
@@ -274,11 +272,11 @@ impl Client<AuthCodeGrantPKCEFlow> {
     }
 
     pub async fn request_token(
-        &mut self,
+        self,
         auth: AuthorisationPKCE,
         auth_code: AuthorizationCode,
         csrf_state: &str,
-    ) -> Result<Token> {
+    ) -> Result<Client<Token, AuthCodeGrantPKCEFlow>> {
         if csrf_state != auth.csrf_token.secret() {
             return Err(Error::InvalidStateParameter);
         }
@@ -291,12 +289,17 @@ impl Client<AuthCodeGrantPKCEFlow> {
             .await?
             .set_timestamps();
 
-        self.token = Some(token.clone());
-        Ok(token)
+        Ok(Client {
+            auto_refresh: self.auto_refresh,
+            auth: token,
+            oauth: self.oauth,
+            http: self.http,
+            marker: PhantomData,
+        })
     }
 }
 
-impl Client<AuthCodeGrantFlow> {
+impl Client<UnAuthenticated, AuthCodeGrantFlow> {
     pub fn get_authorisation<I: IntoIterator>(&self, scopes: I) -> Authorisation
     where
         I::Item: Into<Scope>,
@@ -314,11 +317,11 @@ impl Client<AuthCodeGrantFlow> {
     }
 
     pub async fn request_token(
-        &mut self,
+        self,
         auth: Authorisation,
         auth_code: AuthorizationCode,
         csrf_state: &str,
-    ) -> Result<Token> {
+    ) -> Result<Client<Token, AuthCodeGrantFlow>> {
         if csrf_state != auth.csrf_token.secret() {
             return Err(Error::InvalidStateParameter);
         }
@@ -330,7 +333,12 @@ impl Client<AuthCodeGrantFlow> {
             .await?
             .set_timestamps();
 
-        self.token = Some(token.clone());
-        Ok(token)
+        Ok(Client {
+            auto_refresh: self.auto_refresh,
+            auth: token,
+            oauth: self.oauth,
+            http: self.http,
+            marker: PhantomData,
+        })
     }
 }

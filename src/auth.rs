@@ -16,10 +16,38 @@ pub trait AuthFlow {
     }
 }
 
+pub trait AuthenticationState {}
+impl AuthenticationState for Token {}
+impl AuthenticationState for UnAuthenticated {}
+
 pub trait Authorised {}
 impl Authorised for AuthCodeGrantPKCEFlow {}
 impl Authorised for AuthCodeGrantFlow {}
 impl Authorised for ImplicitGrantFlow {}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Token {
+    pub access_token: AccessToken,
+    pub refresh_token: Option<RefreshToken>,
+    pub expires_in: u64,
+
+    #[serde(skip)]
+    pub created_at: DateTime<Utc>,
+    #[serde(skip)]
+    pub expires_at: DateTime<Utc>,
+
+    #[serde(deserialize_with = "oauth2::helpers::deserialize_untagged_enum_case_insensitive")]
+    pub(crate) token_type: BasicTokenType,
+    #[serde(rename = "scope")]
+    #[serde(deserialize_with = "oauth2::helpers::deserialize_space_delimited_vec")]
+    #[serde(serialize_with = "oauth2::helpers::serialize_space_delimited_vec")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub(crate) scopes: Option<Vec<oauth2::Scope>>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct UnAuthenticated;
 
 #[derive(Clone, Debug)]
 pub struct AuthCodeGrantPKCEFlow {
@@ -41,27 +69,6 @@ pub struct ClientCredsGrantFlow {
 #[derive(Clone, Debug)]
 pub struct ImplicitGrantFlow {
     pub client_id: String,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Token {
-    pub access_token: AccessToken,
-    pub refresh_token: Option<RefreshToken>,
-    pub expires_in: u64,
-
-    #[serde(skip)]
-    pub created_at: DateTime<Utc>,
-    #[serde(skip)]
-    pub expires_at: DateTime<Utc>,
-
-    #[serde(deserialize_with = "oauth2::helpers::deserialize_untagged_enum_case_insensitive")]
-    pub(crate) token_type: BasicTokenType,
-    #[serde(rename = "scope")]
-    #[serde(deserialize_with = "oauth2::helpers::deserialize_space_delimited_vec")]
-    #[serde(serialize_with = "oauth2::helpers::serialize_space_delimited_vec")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub(crate) scopes: Option<Vec<oauth2::Scope>>,
 }
 
 #[derive(Debug)]

@@ -65,10 +65,16 @@ pub struct Token {
 }
 
 #[derive(Debug)]
-pub struct Authorisation {
+pub struct AuthorisationPKCE {
     pub url: Url,
     pub(crate) csrf_token: CsrfToken,
     pub(crate) pkce_verifier: PkceCodeVerifier,
+}
+
+#[derive(Debug)]
+pub struct Authorisation {
+    pub url: Url,
+    pub(crate) csrf_token: CsrfToken,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -111,7 +117,6 @@ impl TokenResponse<BasicTokenType> for Token {
 
     fn refresh_token(&self) -> Option<&RefreshToken> {
         self.refresh_token.as_ref()
-        // Some(&self.refresh_token)
     }
 
     fn scopes(&self) -> Option<&Vec<oauth2::Scope>> {

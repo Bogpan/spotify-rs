@@ -5,7 +5,7 @@ use oauth2::{
         BasicErrorResponse, BasicRevocationErrorResponse, BasicTokenIntrospectionResponse,
         BasicTokenType,
     },
-    reqwest::async_http_client,
+    reqwest::{async_http_client, AsyncHttpClientError},
     AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, RedirectUrl, StandardRevocableToken,
 };
 use reqwest::{Method, RequestBuilder};
@@ -13,7 +13,10 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 
 use crate::{
-    auth::{AuthCodeGrantPKCEFlow, AuthFlow, Authorisation, Authorised, Scope, Token},
+    auth::{
+        AuthCodeGrantFlow, AuthCodeGrantPKCEFlow, AuthFlow, Authorisation, AuthorisationPKCE,
+        Authorised, Scope, Token,
+    },
     error::{Error, SpotifyError},
     model::{
         album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
@@ -72,7 +75,7 @@ impl<F: AuthFlow> Client<F> {
             .map(|t| t.secret())
     }
 
-    pub(crate) async fn request_refresh(&mut self) -> std::result::Result<(), Error> {
+    pub async fn request_refresh_token(&mut self) -> Result<()> {
         let Some(token) = &self.token else {
             return Err(Error::NotAuthenticated)
         };
@@ -105,7 +108,7 @@ impl<F: AuthFlow> Client<F> {
 
         if token.is_expired() {
             if self.auto_refresh {
-                self.request_refresh().await?
+                self.request_refresh_token().await?
             }
 
             return Err(Error::ExpiredToken);
@@ -250,7 +253,7 @@ impl<F: AuthFlow + Authorised + Sync> Client<F> {
 }
 
 impl Client<AuthCodeGrantPKCEFlow> {
-    pub fn get_authorisation<I: IntoIterator>(&self, scopes: I) -> Authorisation
+    pub fn get_authorisation<I: IntoIterator>(&self, scopes: I) -> AuthorisationPKCE
     where
         I::Item: Into<Scope>,
     {
@@ -263,7 +266,7 @@ impl Client<AuthCodeGrantPKCEFlow> {
             .set_pkce_challenge(pkce_challenge)
             .url();
 
-        Authorisation {
+        AuthorisationPKCE {
             url: auth_url,
             csrf_token,
             pkce_verifier,
@@ -272,7 +275,7 @@ impl Client<AuthCodeGrantPKCEFlow> {
 
     pub async fn request_token(
         &mut self,
-        auth: Authorisation,
+        auth: AuthorisationPKCE,
         auth_code: AuthorizationCode,
         csrf_state: &str,
     ) -> Result<Token> {
@@ -291,19 +294,38 @@ impl Client<AuthCodeGrantPKCEFlow> {
         self.token = Some(token.clone());
         Ok(token)
     }
+}
 
-    pub async fn request_token_refresh(&mut self) -> Result<Token> {
-        let Some(token) = &self.token else {
-            return Err(Error::NotAuthenticated)
-        };
+impl Client<AuthCodeGrantFlow> {
+    pub fn get_authorisation<I: IntoIterator>(&self, scopes: I) -> Authorisation
+    where
+        I::Item: Into<Scope>,
+    {
+        let (auth_url, csrf_token) = self
+            .oauth
+            .authorize_url(CsrfToken::new_random)
+            .add_scopes(scopes.into_iter().map(|i| i.into().0))
+            .url();
 
-        let Some(refresh_token) = &token.refresh_token else {
-            return Err(Error::RefreshUnavailable);
-        };
+        Authorisation {
+            url: auth_url,
+            csrf_token,
+        }
+    }
+
+    pub async fn request_token(
+        &mut self,
+        auth: Authorisation,
+        auth_code: AuthorizationCode,
+        csrf_state: &str,
+    ) -> Result<Token> {
+        if csrf_state != auth.csrf_token.secret() {
+            return Err(Error::InvalidStateParameter);
+        }
 
         let token = self
             .oauth
-            .exchange_refresh_token(refresh_token)
+            .exchange_code(auth_code)
             .request_async(async_http_client)
             .await?
             .set_timestamps();

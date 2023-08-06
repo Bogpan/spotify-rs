@@ -275,7 +275,7 @@ impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
     pub async fn authenticate(
         self,
         auth: AuthorisationPKCE,
-        auth_code: AuthorizationCode,
+        auth_code: &str,
         csrf_state: &str,
     ) -> Result<Client<Token, AuthCodeGrantPKCEFlow>> {
         if csrf_state != auth.csrf_token.secret() {
@@ -284,7 +284,7 @@ impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
 
         let token = self
             .oauth
-            .exchange_code(auth_code)
+            .exchange_code(AuthorizationCode::new(auth_code.to_owned()))
             .set_pkce_verifier(auth.pkce_verifier)
             .request_async(async_http_client)
             .await?
@@ -321,7 +321,7 @@ impl Client<UnAuthenticated, AuthCodeGrantFlow> {
     pub async fn authenticate(
         self,
         auth: Authorisation,
-        auth_code: AuthorizationCode,
+        auth_code: &str,
         csrf_state: &str,
     ) -> Result<Client<Token, AuthCodeGrantFlow>> {
         if csrf_state != auth.csrf_token.secret() {
@@ -330,7 +330,7 @@ impl Client<UnAuthenticated, AuthCodeGrantFlow> {
 
         let token = self
             .oauth
-            .exchange_code(auth_code)
+            .exchange_code(AuthorizationCode::new(auth_code.to_owned()))
             .request_async(async_http_client)
             .await?
             .set_timestamps();

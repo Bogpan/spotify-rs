@@ -265,19 +265,6 @@ impl<F: AuthFlow> Client<Token, F> {
         .map(|t: Tracks| t.tracks)
     }
 
-    // pub async fn get_artist_related_artists(
-    //     &mut self,
-    //     query: ArtistTopTracksQuery,
-    // ) -> Result<Vec<Track>> {
-    //     self.get(
-    //         &format!("/artists/{}/top-tracks", query.artist_id),
-    //         query,
-    //         None,
-    //     )
-    //     .await
-    //     .map(|t: Tracks| t.tracks)
-    // }
-
     pub async fn get_artist_related_artists(&mut self, artist_id: &str) -> Result<Vec<Artist>> {
         self.get::<(), _>(&format!("/artists/{artist_id}/related-artists"), None, None)
             .await

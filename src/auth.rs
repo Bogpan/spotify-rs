@@ -23,7 +23,6 @@ impl AuthenticationState for UnAuthenticated {}
 pub trait Authorised {}
 impl Authorised for AuthCodeGrantPKCEFlow {}
 impl Authorised for AuthCodeGrantFlow {}
-impl Authorised for ImplicitGrantFlow {}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Token {
@@ -64,11 +63,6 @@ pub struct AuthCodeGrantFlow {
 pub struct ClientCredsGrantFlow {
     pub client_id: String,
     pub client_secret: String,
-}
-
-#[derive(Clone, Debug)]
-pub struct ImplicitGrantFlow {
-    pub client_id: String,
 }
 
 #[derive(Debug)]
@@ -158,20 +152,6 @@ impl AuthFlow for ClientCredsGrantFlow {
 
     fn client_secret(&self) -> Option<ClientSecret> {
         Some(ClientSecret::new(self.client_secret.clone()))
-    }
-}
-
-impl AuthFlow for ImplicitGrantFlow {
-    fn client_id(&self) -> ClientId {
-        ClientId::new(self.client_id.clone())
-    }
-
-    fn client_secret(&self) -> Option<ClientSecret> {
-        None
-    }
-
-    fn token_url(&self) -> Option<TokenUrl> {
-        None
     }
 }
 

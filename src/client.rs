@@ -15,7 +15,7 @@ use serde_json::{json, Value};
 use crate::{
     auth::{
         AuthCodeGrantFlow, AuthCodeGrantPKCEFlow, AuthFlow, AuthenticationState, Authorisation,
-        AuthorisationPKCE, Authorised, Scope, Token, UnAuthenticated,
+        AuthorisationPKCE, Authorised, ClientCredsGrantFlow, Scope, Token, UnAuthenticated,
     },
     error::{Error, SpotifyError},
     model::{
@@ -251,8 +251,9 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
 }
 
 impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
-    pub fn get_authorisation<I: IntoIterator>(&self, scopes: I) -> AuthorisationPKCE
+    pub fn get_authorisation<I>(&self, scopes: I) -> AuthorisationPKCE
     where
+        I: IntoIterator,
         I::Item: Into<Scope>,
     {
         let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
@@ -271,7 +272,7 @@ impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
         }
     }
 
-    pub async fn request_token(
+    pub async fn authenticate(
         self,
         auth: AuthorisationPKCE,
         auth_code: AuthorizationCode,
@@ -300,8 +301,9 @@ impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
 }
 
 impl Client<UnAuthenticated, AuthCodeGrantFlow> {
-    pub fn get_authorisation<I: IntoIterator>(&self, scopes: I) -> Authorisation
+    pub fn get_authorisation<I>(&self, scopes: I) -> Authorisation
     where
+        I: IntoIterator,
         I::Item: Into<Scope>,
     {
         let (auth_url, csrf_token) = self
@@ -316,7 +318,7 @@ impl Client<UnAuthenticated, AuthCodeGrantFlow> {
         }
     }
 
-    pub async fn request_token(
+    pub async fn authenticate(
         self,
         auth: Authorisation,
         auth_code: AuthorizationCode,
@@ -332,6 +334,29 @@ impl Client<UnAuthenticated, AuthCodeGrantFlow> {
             .request_async(async_http_client)
             .await?
             .set_timestamps();
+
+        Ok(Client {
+            auto_refresh: self.auto_refresh,
+            auth: token,
+            oauth: self.oauth,
+            http: self.http,
+            marker: PhantomData,
+        })
+    }
+}
+
+impl Client<UnAuthenticated, ClientCredsGrantFlow> {
+    pub async fn authenticate<I>(self, scopes: I) -> Result<Client<Token, ClientCredsGrantFlow>>
+    where
+        I: IntoIterator,
+        I::Item: Into<Scope>,
+    {
+        let token = self
+            .oauth
+            .exchange_client_credentials()
+            .add_scopes(scopes.into_iter().map(|i| i.into().0))
+            .request_async(async_http_client)
+            .await?;
 
         Ok(Client {
             auto_refresh: self.auto_refresh,

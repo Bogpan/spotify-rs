@@ -17,6 +17,11 @@ pub struct Artist {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub(crate) struct Artists {
+    pub(crate) artists: Vec<Artist>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct SimplifiedArtist {
     pub external_urls: ExternalUrls,
     pub href: String,

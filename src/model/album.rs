@@ -1,5 +1,7 @@
+use std::fmt::{write, Display};
+
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::{artist::SimplifiedArtist, track::SimplifiedTrack, *};
 
@@ -72,11 +74,24 @@ pub enum AlbumType {
     Compilation,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AlbumGroup {
     Album,
     Single,
     Compilation,
     AppearsOn,
+}
+
+impl Display for AlbumGroup {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            AlbumGroup::Album => "album",
+            AlbumGroup::Single => "single",
+            AlbumGroup::Compilation => "compilation",
+            AlbumGroup::AppearsOn => "appears_on",
+        };
+
+        write!(f, "{s}")
+    }
 }

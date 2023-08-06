@@ -20,10 +20,14 @@ use crate::{
     error::{Error, SpotifyError},
     model::{
         album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
-        track::SimplifiedTrack,
+        artist::{Artist, Artists},
+        track::{SimplifiedTrack, Track, Tracks},
         Page,
     },
-    query::album::{AlbumQuery, AlbumTracksQuery, AlbumsQuery, NewReleaseQuery, SavedAlbumsQuery},
+    query::{
+        album::{AlbumQuery, AlbumTracksQuery, AlbumsQuery, NewReleaseQuery, SavedAlbumsQuery},
+        artist::{ArtistAlbumsQuery, ArtistTopTracksQuery},
+    },
     Result,
 };
 
@@ -223,9 +227,61 @@ impl<F: AuthFlow> Client<Token, F> {
         &mut self,
         query: NewReleaseQuery,
     ) -> Result<Page<SimplifiedAlbum>> {
-        self.get("/browse/new-releases/", query, None)
+        self.get("/browse/new-releases", query, None)
             .await
             .map(|a: PagedAlbums| a.albums)
+    }
+
+    pub async fn get_artist(&mut self, artist_id: &str) -> Result<Artist> {
+        self.get::<(), _>(&format!("/artists/{artist_id}"), None, None)
+            .await
+    }
+
+    pub async fn get_artists(&mut self, artist_ids: &[&str]) -> Result<Vec<Artist>> {
+        let query = [("ids", artist_ids.join(","))];
+        self.get("/artists", query, None)
+            .await
+            .map(|a: Artists| a.artists)
+    }
+
+    pub async fn get_artist_albums(
+        &mut self,
+        query: ArtistAlbumsQuery,
+    ) -> Result<Page<SimplifiedAlbum>> {
+        self.get(&format!("/artists/{}/albums", query.artist_id), query, None)
+            .await
+    }
+
+    pub async fn get_artist_top_tracks(
+        &mut self,
+        query: ArtistTopTracksQuery,
+    ) -> Result<Vec<Track>> {
+        self.get(
+            &format!("/artists/{}/top-tracks", query.artist_id),
+            query,
+            None,
+        )
+        .await
+        .map(|t: Tracks| t.tracks)
+    }
+
+    // pub async fn get_artist_related_artists(
+    //     &mut self,
+    //     query: ArtistTopTracksQuery,
+    // ) -> Result<Vec<Track>> {
+    //     self.get(
+    //         &format!("/artists/{}/top-tracks", query.artist_id),
+    //         query,
+    //         None,
+    //     )
+    //     .await
+    //     .map(|t: Tracks| t.tracks)
+    // }
+
+    pub async fn get_artist_related_artists(&mut self, artist_id: &str) -> Result<Vec<Artist>> {
+        self.get::<(), _>(&format!("/artists/{artist_id}/related-artists"), None, None)
+            .await
+            .map(|a: Artists| a.artists)
     }
 }
 
@@ -235,12 +291,12 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     }
 
     pub async fn save_albums(&mut self, album_ids: &[&str]) -> Result<()> {
-        self.put::<()>("/me/albums/", None, json!({ "ids": album_ids }))
+        self.put::<()>("/me/albums", None, json!({ "ids": album_ids }))
             .await
     }
 
     pub async fn remove_saved_albums(&mut self, album_ids: &[&str]) -> Result<()> {
-        self.delete::<()>("/me/albums/", None, json!({ "ids": album_ids }))
+        self.delete::<()>("/me/albums", None, json!({ "ids": album_ids }))
             .await
     }
 

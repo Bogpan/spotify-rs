@@ -30,6 +30,11 @@ pub struct Track {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub(crate) struct Tracks {
+    pub(crate) tracks: Vec<Track>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SimplifiedTrack {
     pub artists: Vec<SimplifiedArtist>,

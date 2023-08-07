@@ -1,4 +1,8 @@
-use std::{fmt::Debug, marker::PhantomData};
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    vec,
+};
 
 use oauth2::{
     basic::{
@@ -51,6 +55,16 @@ pub(crate) type OAuthClient = oauth2::Client<
     StandardRevocableToken,
     BasicRevocationErrorResponse,
 >;
+
+fn join_ids<T: AsRef<str>>(ids: &[T]) -> [(&str, String); 1] {
+    [(
+        "ids",
+        ids.iter()
+            .map(|i| i.as_ref())
+            .collect::<Vec<&str>>()
+            .join(","),
+    )]
+}
 
 #[derive(Debug)]
 pub struct Client<A: AuthenticationState, F: AuthFlow> {
@@ -258,9 +272,8 @@ impl<F: AuthFlow> Client<Token, F> {
             .await
     }
 
-    pub async fn get_artists(&mut self, artist_ids: &[&str]) -> Result<Vec<Artist>> {
-        let query = [("ids", artist_ids.join(","))];
-        self.get("/artists", query, None)
+    pub async fn get_artists<T: AsRef<str>>(&mut self, artist_ids: &[T]) -> Result<Vec<Artist>> {
+        self.get("/artists", join_ids(artist_ids), None)
             .await
             .map(|a: Artists| a.artists)
     }
@@ -369,18 +382,24 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         self.get("/me/albums", query, None).await
     }
 
-    pub async fn save_albums(&mut self, album_ids: &[&str]) -> Result<()> {
+    pub async fn save_albums<T: AsRef<str> + Serialize>(&mut self, album_ids: &[T]) -> Result<()> {
         self.put::<()>("/me/albums", None, json!({ "ids": album_ids }))
             .await
     }
 
-    pub async fn remove_saved_albums(&mut self, album_ids: &[&str]) -> Result<()> {
+    pub async fn remove_saved_albums<T: AsRef<str> + Serialize>(
+        &mut self,
+        album_ids: &[T],
+    ) -> Result<()> {
         self.delete::<()>("/me/albums", None, json!({ "ids": album_ids }))
             .await
     }
 
-    pub async fn check_saved_albums(&mut self, album_ids: &[&str]) -> Result<Vec<bool>> {
-        self.get("/me/albums/contains", [("ids", album_ids.join(","))], None)
+    pub async fn check_saved_albums<T: AsRef<str>>(
+        &mut self,
+        album_ids: &[T],
+    ) -> Result<Vec<bool>> {
+        self.get("/me/albums/contains", join_ids(album_ids), None)
             .await
     }
 
@@ -401,23 +420,25 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
             })
     }
 
-    pub async fn save_audiobooks(&mut self, audiobook_ids: &[&str]) -> Result<()> {
-        self.put("/me/audiobooks", [("ids", audiobook_ids.join(","))], None)
+    pub async fn save_audiobooks<T: AsRef<str>>(&mut self, audiobook_ids: &[T]) -> Result<()> {
+        self.put("/me/audiobooks", join_ids(audiobook_ids), None)
             .await
     }
 
-    pub async fn remove_saved_audiobooks(&mut self, audiobook_ids: &[&str]) -> Result<()> {
-        self.delete("/me/audiobooks", [("ids", audiobook_ids.join(","))], None)
+    pub async fn remove_saved_audiobooks<T: AsRef<str>>(
+        &mut self,
+        audiobook_ids: &[T],
+    ) -> Result<()> {
+        self.delete("/me/audiobooks", join_ids(audiobook_ids), None)
             .await
     }
 
-    pub async fn check_saved_audiobooks(&mut self, audiobook_ids: &[&str]) -> Result<Vec<bool>> {
-        self.get(
-            "/me/audiobooks/contains",
-            [("ids", audiobook_ids.join(","))],
-            None,
-        )
-        .await
+    pub async fn check_saved_audiobooks<T: AsRef<str>>(
+        &mut self,
+        audiobook_ids: &[T],
+    ) -> Result<Vec<bool>> {
+        self.get("/me/audiobooks/contains", join_ids(audiobook_ids), None)
+            .await
     }
 
     pub async fn get_saved_episodes(
@@ -427,23 +448,28 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         self.get("/me/episodes", query, None).await
     }
 
-    pub async fn save_episodes(&mut self, episode_ids: &[&str]) -> Result<()> {
+    pub async fn save_episodes<T: AsRef<str> + Serialize>(
+        &mut self,
+        episode_ids: &[T],
+    ) -> Result<()> {
         self.put::<()>("/me/episodes", None, json!({ "ids": episode_ids }))
             .await
     }
 
-    pub async fn remove_saved_episodes(&mut self, episode_ids: &[&str]) -> Result<()> {
+    pub async fn remove_saved_episodes<T: AsRef<str> + Serialize>(
+        &mut self,
+        episode_ids: &[T],
+    ) -> Result<()> {
         self.delete::<()>("/me/episodes", None, json!({ "ids": episode_ids }))
             .await
     }
 
-    pub async fn check_saved_episodes(&mut self, episode_ids: &[&str]) -> Result<Vec<bool>> {
-        self.get(
-            "/me/episodes/contains",
-            [("ids", episode_ids.join(","))],
-            None,
-        )
-        .await
+    pub async fn check_saved_episodes<T: AsRef<str>>(
+        &mut self,
+        episode_ids: &[T],
+    ) -> Result<Vec<bool>> {
+        self.get("/me/episodes/contains", join_ids(episode_ids), None)
+            .await
     }
 }
 

@@ -22,6 +22,7 @@ use crate::{
         album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
         artist::{Artist, Artists},
         audiobook::{Audiobook, Audiobooks, SimplifiedAudiobook, SimplifiedChapter},
+        category::{Categories, Category},
         track::{SimplifiedTrack, Track, Tracks},
         Page,
     },
@@ -31,6 +32,7 @@ use crate::{
         audiobook::{
             AudiobookChaptersQuery, AudiobookQuery, AudiobooksQuery, SavedAudiobooksQuery,
         },
+        category::{CategoriesQuery, CategoryQuery},
     },
     Result,
 };
@@ -305,6 +307,24 @@ impl<F: AuthFlow> Client<Token, F> {
             None,
         )
         .await
+    }
+
+    pub async fn get_browse_category(&mut self, query: CategoryQuery) -> Result<Category> {
+        self.get(
+            &format!("/browse/categories/{}", query.category_id),
+            query,
+            None,
+        )
+        .await
+    }
+
+    pub async fn get_browse_categories(
+        &mut self,
+        query: CategoriesQuery,
+    ) -> Result<Page<Category>> {
+        self.get("/browse/categories", query, None)
+            .await
+            .map(|c: Categories| c.categories)
     }
 }
 

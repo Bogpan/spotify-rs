@@ -67,11 +67,11 @@ pub struct Episode {
     pub images: Vec<Image>,
     pub is_externally_hosted: bool,
     pub is_playable: bool,
-    pub langauges: Vec<String>,
+    pub languages: Vec<String>,
     pub name: String,
     pub release_date: String,
     pub release_date_precision: DatePrecision,
-    pub resume_point: ResumePoint,
+    pub resume_point: Option<ResumePoint>,
     pub r#type: String,
     pub uri: String,
     pub restrictions: Option<Restrictions>,
@@ -91,12 +91,23 @@ pub struct SimplifiedEpisode {
     pub images: Vec<Image>,
     pub is_externally_hosted: bool,
     pub is_playable: bool,
-    pub langauges: Vec<String>,
+    pub languages: Vec<String>,
     pub name: String,
     pub release_date: String,
     pub release_date_precision: DatePrecision,
-    pub resume_point: ResumePoint,
+    pub resume_point: Option<ResumePoint>,
     pub r#type: String,
     pub uri: String,
     pub restrictions: Option<Restrictions>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct SavedEpisode {
+    pub added_at: DateTime<Utc>,
+    pub episode: Episode,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct Episodes {
+    pub(crate) episodes: Vec<Episode>,
 }

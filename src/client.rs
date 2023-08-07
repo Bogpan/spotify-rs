@@ -25,6 +25,7 @@ use crate::{
             Audiobook, Audiobooks, Chapter, Chapters, SimplifiedAudiobook, SimplifiedChapter,
         },
         category::{Categories, Category},
+        show::{Episode, Episodes, SavedEpisode},
         track::{SimplifiedTrack, Track, Tracks},
         Page,
     },
@@ -36,6 +37,7 @@ use crate::{
             SavedAudiobooksQuery,
         },
         category::{CategoriesQuery, CategoryQuery},
+        show::{EpisodeQuery, EpisodesQuery, SavedEpisodesQuery},
     },
     Result,
 };
@@ -330,17 +332,28 @@ impl<F: AuthFlow> Client<Token, F> {
             .map(|c: Categories| c.categories)
     }
 
-    // Currently returns 500 Server error
+    /// *Note: currently returns `500 Server error`.*
     pub async fn get_chapter(&mut self, query: ChapterQuery) -> Result<Chapter> {
         self.get(&format!("/chapters/{}", query.chapter_id), query, None)
             .await
     }
 
-    // Currently returns 500 Server error
+    /// *Note: currently returns `500 Server error`.*
     pub async fn get_chapters(&mut self, query: ChaptersQuery) -> Result<Vec<Chapter>> {
         self.get("/chapters", query, None)
             .await
             .map(|c: Chapters| c.chapters)
+    }
+
+    pub async fn get_episode(&mut self, query: EpisodeQuery) -> Result<Episode> {
+        self.get(&format!("/episodes/{}", query.episode_id), query, None)
+            .await
+    }
+
+    pub async fn get_episodes(&mut self, query: EpisodesQuery) -> Result<Vec<Episode>> {
+        self.get("/episodes", query, None)
+            .await
+            .map(|a: Episodes| a.episodes)
     }
 }
 
@@ -395,6 +408,32 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         self.get(
             "/me/audiobooks/contains",
             [("ids", audiobook_ids.join(","))],
+            None,
+        )
+        .await
+    }
+
+    pub async fn get_saved_episodes(
+        &mut self,
+        query: SavedEpisodesQuery,
+    ) -> Result<Page<SavedEpisode>> {
+        self.get("/me/episodes", query, None).await
+    }
+
+    pub async fn save_episodes(&mut self, episode_ids: &[&str]) -> Result<()> {
+        self.put::<()>("/me/episodes", None, json!({ "ids": episode_ids }))
+            .await
+    }
+
+    pub async fn remove_saved_episodes(&mut self, episode_ids: &[&str]) -> Result<()> {
+        self.delete::<()>("/me/episodes", None, json!({ "ids": episode_ids }))
+            .await
+    }
+
+    pub async fn check_saved_episodes(&mut self, episode_ids: &[&str]) -> Result<Vec<bool>> {
+        self.get(
+            "/me/episodes/contains",
+            [("ids", episode_ids.join(","))],
             None,
         )
         .await

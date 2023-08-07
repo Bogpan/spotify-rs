@@ -8,6 +8,7 @@ Currently, it only supports the following endpoints:
 - audiobook
 - category 
 - chapter (Note: they return `500 Server error`, an issue with the Spotify API)
+- episode
 
 More will be added in the near future. The library is in its infancy and breaking changes will occur. Any feedback is appreciated.
 

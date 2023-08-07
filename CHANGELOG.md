@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All [artist endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-artist) from the Spotify API.
 - All [audiobook endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-audiobook) from the Spotify API.
 - All [category endpoints](https://developer.spotify.com/documentation/web-api/reference/get-categories) from the Spotify API.
+- All [chapter endpoints]() from the Spotify API. Note: they return `500 Server error`, an issue with the API.
 
 ### Changed
 

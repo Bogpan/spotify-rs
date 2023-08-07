@@ -108,6 +108,11 @@ pub struct SimplifiedChapter {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub(crate) struct Chapters {
+    pub(crate) chapters: Vec<Chapter>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct Author {
     pub name: String,
 }

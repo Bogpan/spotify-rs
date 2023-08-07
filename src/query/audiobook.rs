@@ -98,3 +98,45 @@ impl SavedAudiobooksQuery {
         self
     }
 }
+
+#[derive(Debug, Default, Serialize)]
+pub struct ChapterQuery {
+    #[serde(skip)]
+    pub(crate) chapter_id: String,
+    market: Option<String>,
+}
+
+impl ChapterQuery {
+    pub fn new(chapter_id: &str) -> Self {
+        Self {
+            chapter_id: chapter_id.to_owned(),
+            market: None,
+        }
+    }
+
+    pub fn market(mut self, market: &str) -> Self {
+        self.market = Some(market.to_owned());
+        self
+    }
+}
+
+#[derive(Debug, Default, Serialize)]
+pub struct ChaptersQuery {
+    #[serde(rename = "ids")]
+    pub(crate) chapter_ids: String,
+    market: Option<String>,
+}
+
+impl ChaptersQuery {
+    pub fn new(chapter_ids: &[&str]) -> Self {
+        Self {
+            chapter_ids: chapter_ids.join(","),
+            market: None,
+        }
+    }
+
+    pub fn market(mut self, market: &str) -> Self {
+        self.market = Some(market.to_owned());
+        self
+    }
+}

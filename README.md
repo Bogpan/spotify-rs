@@ -3,10 +3,11 @@ spotify-rs is a Rust wrapper for the Spotify API.
 
 Currently, it only supports the following endpoints:
 
-- album-related
-- artist-related
-- audiobook-related
-- category-related
+- album
+- artist
+- audiobook
+- category 
+- chapter (Note: they return `500 Server error`, an issue with the Spotify API)
 
 More will be added in the near future. The library is in its infancy and breaking changes will occur. Any feedback is appreciated.
 

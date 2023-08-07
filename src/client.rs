@@ -21,7 +21,9 @@ use crate::{
     model::{
         album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
         artist::{Artist, Artists},
-        audiobook::{Audiobook, Audiobooks, SimplifiedAudiobook, SimplifiedChapter},
+        audiobook::{
+            Audiobook, Audiobooks, Chapter, Chapters, SimplifiedAudiobook, SimplifiedChapter,
+        },
         category::{Categories, Category},
         track::{SimplifiedTrack, Track, Tracks},
         Page,
@@ -30,7 +32,8 @@ use crate::{
         album::{AlbumQuery, AlbumTracksQuery, AlbumsQuery, NewReleaseQuery, SavedAlbumsQuery},
         artist::{ArtistAlbumsQuery, ArtistTopTracksQuery},
         audiobook::{
-            AudiobookChaptersQuery, AudiobookQuery, AudiobooksQuery, SavedAudiobooksQuery,
+            AudiobookChaptersQuery, AudiobookQuery, AudiobooksQuery, ChapterQuery, ChaptersQuery,
+            SavedAudiobooksQuery,
         },
         category::{CategoriesQuery, CategoryQuery},
     },
@@ -326,6 +329,19 @@ impl<F: AuthFlow> Client<Token, F> {
             .await
             .map(|c: Categories| c.categories)
     }
+
+    // Currently returns 500 Server error
+    pub async fn get_chapter(&mut self, query: ChapterQuery) -> Result<Chapter> {
+        self.get(&format!("/chapters/{}", query.chapter_id), query, None)
+            .await
+    }
+
+    // Currently returns 500 Server error
+    pub async fn get_chapters(&mut self, query: ChaptersQuery) -> Result<Vec<Chapter>> {
+        self.get("/chapters", query, None)
+            .await
+            .map(|c: Chapters| c.chapters)
+    }
 }
 
 impl<F: AuthFlow + Authorised> Client<Token, F> {
@@ -366,27 +382,19 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     }
 
     pub async fn save_audiobooks(&mut self, audiobook_ids: &[&str]) -> Result<()> {
-        self.put::<()>(
-            &format!("/me/audiobooks/?ids={}", audiobook_ids.join(",")),
-            None,
-            None,
-        )
-        .await
+        self.put("/me/audiobooks", [("ids", audiobook_ids.join(","))], None)
+            .await
     }
 
     pub async fn remove_saved_audiobooks(&mut self, audiobook_ids: &[&str]) -> Result<()> {
-        self.delete::<()>(
-            &format!("/me/audiobooks/?ids={}", audiobook_ids.join(",")),
-            None,
-            None,
-        )
-        .await
+        self.delete("/me/audiobooks", [("ids", audiobook_ids.join(","))], None)
+            .await
     }
 
     pub async fn check_saved_audiobooks(&mut self, audiobook_ids: &[&str]) -> Result<Vec<bool>> {
-        self.get::<(), _>(
-            &format!("/me/audiobooks/contains/?ids={}", audiobook_ids.join(",")),
-            None,
+        self.get(
+            "/me/audiobooks/contains",
+            [("ids", audiobook_ids.join(","))],
             None,
         )
         .await

@@ -8,7 +8,7 @@ use oauth2::{
     reqwest::async_http_client,
     AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, RedirectUrl, StandardRevocableToken,
 };
-use reqwest::{Method, RequestBuilder};
+use reqwest::{header::CONTENT_LENGTH, Method, RequestBuilder};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 
@@ -21,12 +21,16 @@ use crate::{
     model::{
         album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
         artist::{Artist, Artists},
+        audiobook::{Audiobook, Audiobooks, SimplifiedAudiobook, SimplifiedChapter},
         track::{SimplifiedTrack, Track, Tracks},
         Page,
     },
     query::{
         album::{AlbumQuery, AlbumTracksQuery, AlbumsQuery, NewReleaseQuery, SavedAlbumsQuery},
         artist::{ArtistAlbumsQuery, ArtistTopTracksQuery},
+        audiobook::{
+            AudiobookChaptersQuery, AudiobookQuery, AudiobooksQuery, SavedAudiobooksQuery,
+        },
     },
     Result,
 };
@@ -127,6 +131,11 @@ impl<F: AuthFlow> Client<Token, F> {
 
         if let Some(j) = json {
             req = req.json(&j);
+        } else {
+            // Used because Spotify wants a Content-Length header for the PUT /audiobooks/me endpoint even though there is no body
+            // If not supplied, it will return an error in the form of HTML (not JSON), which I believe to be an issue on their end.
+            // No other endpoints so far behave this way.
+            req = req.header(CONTENT_LENGTH, 0);
         }
 
         Ok(req)
@@ -138,13 +147,17 @@ impl<F: AuthFlow> Client<Token, F> {
         query: impl Into<Option<Q>>,
         json: impl Into<Option<Value>>,
     ) -> Result<T> {
-        Ok(self
+        let res = self
             .request(Method::GET, endpoint, query.into(), json.into())
             .await?
             .send()
-            .await?
-            .json()
-            .await?)
+            .await?;
+
+        if res.status().is_success() {
+            Ok(res.json().await?)
+        } else {
+            Err(res.json::<SpotifyError>().await?.into())
+        }
     }
 
     pub(crate) async fn post<Q: Serialize + Debug>(
@@ -270,6 +283,29 @@ impl<F: AuthFlow> Client<Token, F> {
             .await
             .map(|a: Artists| a.artists)
     }
+
+    pub async fn get_audiobook(&mut self, query: AudiobookQuery) -> Result<Audiobook> {
+        self.get(&format!("/audiobooks/{}", query.audiobook_id), query, None)
+            .await
+    }
+
+    pub async fn get_audiobooks(&mut self, query: AudiobooksQuery) -> Result<Vec<Audiobook>> {
+        self.get("/audiobooks", query, None)
+            .await
+            .map(|a: Audiobooks| a.audiobooks)
+    }
+
+    pub async fn get_audiobook_chapters(
+        &mut self,
+        query: AudiobookChaptersQuery,
+    ) -> Result<Page<SimplifiedChapter>> {
+        self.get(
+            &format!("/audiobooks/{}/chapters", query.audiobook_id),
+            query,
+            None,
+        )
+        .await
+    }
 }
 
 impl<F: AuthFlow + Authorised> Client<Token, F> {
@@ -290,6 +326,50 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     pub async fn check_saved_albums(&mut self, album_ids: &[&str]) -> Result<Vec<bool>> {
         self.get("/me/albums/contains", [("ids", album_ids.join(","))], None)
             .await
+    }
+
+    pub async fn get_saved_audiobooks(
+        &mut self,
+        query: SavedAudiobooksQuery,
+    ) -> Result<Page<SimplifiedAudiobook>> {
+        self.get("/me/audiobooks", query, None)
+            .await
+            .map(|p: Page<Option<SimplifiedAudiobook>>| Page {
+                href: p.href,
+                limit: p.limit,
+                next: p.next,
+                offset: p.offset,
+                previous: p.previous,
+                total: p.total,
+                items: p.items.into_iter().flatten().collect(),
+            })
+    }
+
+    pub async fn save_audiobooks(&mut self, audiobook_ids: &[&str]) -> Result<()> {
+        self.put::<()>(
+            &format!("/me/audiobooks/?ids={}", audiobook_ids.join(",")),
+            None,
+            None,
+        )
+        .await
+    }
+
+    pub async fn remove_saved_audiobooks(&mut self, audiobook_ids: &[&str]) -> Result<()> {
+        self.delete::<()>(
+            &format!("/me/audiobooks/?ids={}", audiobook_ids.join(",")),
+            None,
+            None,
+        )
+        .await
+    }
+
+    pub async fn check_saved_audiobooks(&mut self, audiobook_ids: &[&str]) -> Result<Vec<bool>> {
+        self.get::<(), _>(
+            &format!("/me/audiobooks/contains/?ids={}", audiobook_ids.join(",")),
+            None,
+            None,
+        )
+        .await
     }
 }
 

@@ -48,7 +48,12 @@ pub struct SimplifiedAudiobook {
     pub publisher: String,
     pub r#type: String,
     pub uri: String,
-    pub total_chapters: u32,
+    pub total_chapters: Option<u32>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct Audiobooks {
+    pub(crate) audiobooks: Vec<Audiobook>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

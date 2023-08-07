@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added two new authorisation flows: Authorisation Code Flow (no PKCE) and Client Credentials Flow.
 - All [artist endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-artist) from the Spotify API.
+- All [audiobook endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-audiobook) from the Spotify API.
 
 ### Changed
 

@@ -17,3 +17,8 @@ pub struct RecommendationSeed {
     pub initial_pool_size: u32,
     pub r#type: String,
 }
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct Genres {
+    pub(crate) genres: Vec<String>,
+}

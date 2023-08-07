@@ -25,6 +25,7 @@ use crate::{
             Audiobook, Audiobooks, Chapter, Chapters, SimplifiedAudiobook, SimplifiedChapter,
         },
         category::{Categories, Category},
+        recommendation::Genres,
         show::{Episode, Episodes, SavedEpisode},
         track::{SimplifiedTrack, Track, Tracks},
         Page,
@@ -354,6 +355,12 @@ impl<F: AuthFlow> Client<Token, F> {
         self.get("/episodes", query, None)
             .await
             .map(|a: Episodes| a.episodes)
+    }
+
+    pub async fn get_genre_seeds(&mut self) -> Result<Vec<String>> {
+        self.get::<(), _>("/recommendations/available-genre-seeds", None, None)
+            .await
+            .map(|g: Genres| g.genres)
     }
 }
 

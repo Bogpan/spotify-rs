@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added two new authorisation flows: Authorisation Code Flow (no PKCE) and Client Credentials Flow.
-- All [artist endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-artist) from the Spotify API.
-- All [audiobook endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-audiobook) from the Spotify API.
-- All [category endpoints](https://developer.spotify.com/documentation/web-api/reference/get-categories) from the Spotify API.
-- All [chapter endpoints](https://developer.spotify.com/documentation/web-api/reference/get-a-chapter) from the Spotify API. Note: they return `500 Server error`, an issue with the API.
-- All [episode endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-episode) from the Spotify API. Note: they return `500 Server error`, an issue with the API.
+- Added endpoints:
+    - All [artist endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-artist)
+    - All [audiobook endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-audiobook)
+    - All [category endpoints](https://developer.spotify.com/documentation/web-api/reference/get-categories)
+    - All [chapter endpoints](https://developer.spotify.com/documentation/web-api/reference/get-a-chapter). Note: they return `500 Server error`, which is an issue with the API.
+    - All [episode endpoints](https://developer.spotify.com/documentation/web-api/reference/get-an-episode)
+    - The [genre endpoint](https://developer.spotify.com/documentation/web-api/reference/get-recommendation-genres)
 
 ### Changed
 

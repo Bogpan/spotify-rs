@@ -29,6 +29,8 @@ use crate::{
             Audiobook, Audiobooks, Chapter, Chapters, SimplifiedAudiobook, SimplifiedChapter,
         },
         category::{Categories, Category},
+        market::Markets,
+        player::{CurrentlyPlayingTrack, Device, Devices, PlaybackState},
         recommendation::Genres,
         show::{Episode, Episodes, SavedEpisode},
         track::{SimplifiedTrack, Track, Tracks},
@@ -42,10 +44,23 @@ use crate::{
             SavedAudiobooksQuery,
         },
         category::{CategoriesQuery, CategoryQuery},
+        player::{
+            CurrentlyPlayingQuery, PlaybackStateQuery, TogglePlaybackQuery, TransferPlaybackQuery,
+        },
         show::{EpisodeQuery, EpisodesQuery, SavedEpisodesQuery},
     },
     Result,
 };
+
+fn query_list<T: AsRef<str>>(ids: &[T]) -> [(&str, String); 1] {
+    [(
+        "ids",
+        ids.iter()
+            .map(|i| i.as_ref())
+            .collect::<Vec<&str>>()
+            .join(","),
+    )]
+}
 
 pub(crate) type OAuthClient = oauth2::Client<
     BasicErrorResponse,
@@ -55,16 +70,6 @@ pub(crate) type OAuthClient = oauth2::Client<
     StandardRevocableToken,
     BasicRevocationErrorResponse,
 >;
-
-fn join_ids<T: AsRef<str>>(ids: &[T]) -> [(&str, String); 1] {
-    [(
-        "ids",
-        ids.iter()
-            .map(|i| i.as_ref())
-            .collect::<Vec<&str>>()
-            .join(","),
-    )]
-}
 
 #[derive(Debug)]
 pub struct Client<A: AuthenticationState, F: AuthFlow> {
@@ -127,12 +132,12 @@ impl<F: AuthFlow> Client<Token, F> {
         Ok(())
     }
 
-    pub(crate) async fn request<Q: Serialize + Debug>(
+    pub(crate) async fn request<Q: Serialize, B: Serialize>(
         &mut self,
         method: Method,
         endpoint: &str,
         query: Option<Q>,
-        json: Option<Value>,
+        body: Option<B>,
     ) -> Result<RequestBuilder> {
         if self.auth.is_expired() {
             if self.auto_refresh {
@@ -151,7 +156,7 @@ impl<F: AuthFlow> Client<Token, F> {
             req = req.query(&q);
         }
 
-        if let Some(j) = json {
+        if let Some(j) = body {
             req = req.json(&j);
         } else {
             // Used because Spotify wants a Content-Length header for the PUT /audiobooks/me endpoint even though there is no body
@@ -163,14 +168,14 @@ impl<F: AuthFlow> Client<Token, F> {
         Ok(req)
     }
 
-    pub(crate) async fn get<Q: Serialize + Debug, T: DeserializeOwned + Debug>(
+    pub(crate) async fn get<Q: Serialize, T: DeserializeOwned>(
         &mut self,
         endpoint: &str,
         query: impl Into<Option<Q>>,
-        json: impl Into<Option<Value>>,
+        body: impl Into<Option<Value>>,
     ) -> Result<T> {
         let res = self
-            .request(Method::GET, endpoint, query.into(), json.into())
+            .request(Method::GET, endpoint, query.into(), body.into())
             .await?
             .send()
             .await?;
@@ -182,14 +187,14 @@ impl<F: AuthFlow> Client<Token, F> {
         }
     }
 
-    pub(crate) async fn post<Q: Serialize + Debug>(
+    pub(crate) async fn post<Q: Serialize>(
         &mut self,
         endpoint: &str,
         query: impl Into<Option<Q>>,
-        json: impl Into<Option<Value>>,
+        body: impl Into<Option<Value>>,
     ) -> Result<()> {
         let res = self
-            .request(Method::POST, endpoint, query.into(), json.into())
+            .request(Method::POST, endpoint, query.into(), body.into())
             .await?
             .send()
             .await?;
@@ -201,14 +206,14 @@ impl<F: AuthFlow> Client<Token, F> {
         }
     }
 
-    pub(crate) async fn put<Q: Serialize + Debug>(
+    pub(crate) async fn put<Q: Serialize>(
         &mut self,
         endpoint: &str,
         query: impl Into<Option<Q>>,
-        json: impl Into<Option<Value>>,
+        body: impl Into<Option<Value>>,
     ) -> Result<()> {
         let res = self
-            .request(Method::PUT, endpoint, query.into(), json.into())
+            .request(Method::PUT, endpoint, query.into(), body.into())
             .await?
             .send()
             .await?;
@@ -220,14 +225,14 @@ impl<F: AuthFlow> Client<Token, F> {
         }
     }
 
-    pub(crate) async fn delete<Q: Serialize + Debug>(
+    pub(crate) async fn delete<Q: Serialize>(
         &mut self,
         endpoint: &str,
         query: impl Into<Option<Q>>,
-        json: impl Into<Option<Value>>,
+        body: impl Into<Option<Value>>,
     ) -> Result<()> {
         let res = self
-            .request(Method::DELETE, endpoint, query.into(), json.into())
+            .request(Method::DELETE, endpoint, query.into(), body.into())
             .await?
             .send()
             .await?;
@@ -273,7 +278,7 @@ impl<F: AuthFlow> Client<Token, F> {
     }
 
     pub async fn get_artists<T: AsRef<str>>(&mut self, artist_ids: &[T]) -> Result<Vec<Artist>> {
-        self.get("/artists", join_ids(artist_ids), None)
+        self.get("/artists", query_list(artist_ids), None)
             .await
             .map(|a: Artists| a.artists)
     }
@@ -399,7 +404,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         &mut self,
         album_ids: &[T],
     ) -> Result<Vec<bool>> {
-        self.get("/me/albums/contains", join_ids(album_ids), None)
+        self.get("/me/albums/contains", query_list(album_ids), None)
             .await
     }
 
@@ -421,7 +426,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     }
 
     pub async fn save_audiobooks<T: AsRef<str>>(&mut self, audiobook_ids: &[T]) -> Result<()> {
-        self.put("/me/audiobooks", join_ids(audiobook_ids), None)
+        self.put("/me/audiobooks", query_list(audiobook_ids), None)
             .await
     }
 
@@ -429,7 +434,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         &mut self,
         audiobook_ids: &[T],
     ) -> Result<()> {
-        self.delete("/me/audiobooks", join_ids(audiobook_ids), None)
+        self.delete("/me/audiobooks", query_list(audiobook_ids), None)
             .await
     }
 
@@ -437,7 +442,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         &mut self,
         audiobook_ids: &[T],
     ) -> Result<Vec<bool>> {
-        self.get("/me/audiobooks/contains", join_ids(audiobook_ids), None)
+        self.get("/me/audiobooks/contains", query_list(audiobook_ids), None)
             .await
     }
 
@@ -468,7 +473,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         &mut self,
         episode_ids: &[T],
     ) -> Result<Vec<bool>> {
-        self.get("/me/episodes/contains", join_ids(episode_ids), None)
+        self.get("/me/episodes/contains", query_list(episode_ids), None)
             .await
     }
 }

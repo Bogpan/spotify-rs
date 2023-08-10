@@ -5,6 +5,7 @@ pub mod artist;
 pub mod audio;
 pub mod audiobook;
 pub mod category;
+pub mod market;
 pub mod player;
 pub mod playlist;
 pub mod recommendation;

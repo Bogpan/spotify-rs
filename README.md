@@ -10,6 +10,7 @@ Currently, it only supports the following endpoints:
 - chapter (Note: they return `500 Server error`, which is an issue with the Spotify API)
 - episode
 - genres
+- player
 
 More will be added in the near future. The library is in its infancy and breaking changes will occur. Any feedback is appreciated.
 

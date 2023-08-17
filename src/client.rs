@@ -1,8 +1,4 @@
-use std::{
-    fmt::{Debug, Display},
-    marker::PhantomData,
-    vec,
-};
+use std::marker::PhantomData;
 
 use oauth2::{
     basic::{
@@ -14,53 +10,33 @@ use oauth2::{
 };
 use reqwest::{header::CONTENT_LENGTH, Method, RequestBuilder};
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{json, Value};
 
 use crate::{
     auth::{
         AuthCodeGrantFlow, AuthCodeGrantPKCEFlow, AuthFlow, AuthenticationState, Authorisation,
         AuthorisationPKCE, Authorised, ClientCredsGrantFlow, Scope, Token, UnAuthenticated,
     },
+    endpoint::{
+        album::{
+            AlbumEndpoint, AlbumTracksEndpoint, AlbumsEndpoint, NewReleasesEndpoint,
+            SavedAlbumsEndpoint,
+        },
+        artist::ArtistEndpoint,
+        audiobook::{
+            AudiobookChaptersEndpoint, AudiobookEndpoint, AudiobooksEndpoint, ChapterEndpoint,
+            ChaptersEndpoint, SavedAudiobooksEndpoint,
+        },
+        category::{BrowseCategoriesEndpoint, BrowseCategoryEndpoint},
+        show::{EpisodeEndpoint, EpisodesEndpoint, SavedEpisodesEndpoint},
+        Builder, Endpoint,
+    },
     error::{Error, SpotifyError},
     model::{
-        album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
         artist::{Artist, Artists},
-        audiobook::{
-            Audiobook, Audiobooks, Chapter, Chapters, SimplifiedAudiobook, SimplifiedChapter,
-        },
-        category::{Categories, Category},
-        market::Markets,
-        player::{CurrentlyPlayingTrack, Device, Devices, PlaybackState},
         recommendation::Genres,
-        show::{Episode, Episodes, SavedEpisode},
-        track::{SimplifiedTrack, Track, Tracks},
-        Page,
     },
-    query::{
-        album::{AlbumQuery, AlbumTracksQuery, AlbumsQuery, NewReleaseQuery, SavedAlbumsQuery},
-        artist::{ArtistAlbumsQuery, ArtistTopTracksQuery},
-        audiobook::{
-            AudiobookChaptersQuery, AudiobookQuery, AudiobooksQuery, ChapterQuery, ChaptersQuery,
-            SavedAudiobooksQuery,
-        },
-        category::{CategoriesQuery, CategoryQuery},
-        player::{
-            CurrentlyPlayingQuery, PlaybackStateQuery, TogglePlaybackQuery, TransferPlaybackQuery,
-        },
-        show::{EpisodeQuery, EpisodesQuery, SavedEpisodesQuery},
-    },
-    Result,
+    query_list, Result,
 };
-
-fn query_list<T: AsRef<str>>(ids: &[T]) -> [(&str, String); 1] {
-    [(
-        "ids",
-        ids.iter()
-            .map(|i| i.as_ref())
-            .collect::<Vec<&str>>()
-            .join(","),
-    )]
-}
 
 pub(crate) type OAuthClient = oauth2::Client<
     BasicErrorResponse,
@@ -132,12 +108,12 @@ impl<F: AuthFlow> Client<Token, F> {
         Ok(())
     }
 
-    pub(crate) async fn request<Q: Serialize, B: Serialize>(
+    async fn request<P: Serialize>(
         &mut self,
         method: Method,
-        endpoint: &str,
-        query: Option<Q>,
-        body: Option<B>,
+        endpoint: String,
+        query: impl Into<Option<P>>,
+        body: impl Into<Option<P>>,
     ) -> Result<RequestBuilder> {
         if self.auth.is_expired() {
             if self.auto_refresh {
@@ -152,11 +128,11 @@ impl<F: AuthFlow> Client<Token, F> {
             .request(method, format!("https://api.spotify.com/v1{endpoint}"))
             .bearer_auth(self.auth.access_token.secret());
 
-        if let Some(q) = query {
+        if let Some(q) = query.into() {
             req = req.query(&q);
         }
 
-        if let Some(j) = body {
+        if let Some(j) = body.into() {
             req = req.json(&j);
         } else {
             // Used because Spotify wants a Content-Length header for the PUT /audiobooks/me endpoint even though there is no body
@@ -168,14 +144,13 @@ impl<F: AuthFlow> Client<Token, F> {
         Ok(req)
     }
 
-    pub(crate) async fn get<Q: Serialize, T: DeserializeOwned>(
+    pub(crate) async fn get<P: Serialize, T: DeserializeOwned>(
         &mut self,
-        endpoint: &str,
-        query: impl Into<Option<Q>>,
-        body: impl Into<Option<Value>>,
+        endpoint: String,
+        query: impl Into<Option<P>>,
     ) -> Result<T> {
         let res = self
-            .request(Method::GET, endpoint, query.into(), body.into())
+            .request(Method::GET, endpoint, query, None)
             .await?
             .send()
             .await?;
@@ -187,14 +162,13 @@ impl<F: AuthFlow> Client<Token, F> {
         }
     }
 
-    pub(crate) async fn post<Q: Serialize>(
+    pub(crate) async fn post<P: Serialize>(
         &mut self,
-        endpoint: &str,
-        query: impl Into<Option<Q>>,
-        body: impl Into<Option<Value>>,
+        endpoint: String,
+        body: impl Into<Option<P>>,
     ) -> Result<()> {
         let res = self
-            .request(Method::POST, endpoint, query.into(), body.into())
+            .request(Method::POST, endpoint, None, body)
             .await?
             .send()
             .await?;
@@ -206,14 +180,13 @@ impl<F: AuthFlow> Client<Token, F> {
         }
     }
 
-    pub(crate) async fn put<Q: Serialize>(
+    pub(crate) async fn put<P: Serialize>(
         &mut self,
-        endpoint: &str,
-        query: impl Into<Option<Q>>,
-        body: impl Into<Option<Value>>,
+        endpoint: String,
+        body: impl Into<Option<P>>,
     ) -> Result<()> {
         let res = self
-            .request(Method::PUT, endpoint, query.into(), body.into())
+            .request(Method::PUT, endpoint, None, body)
             .await?
             .send()
             .await?;
@@ -225,14 +198,13 @@ impl<F: AuthFlow> Client<Token, F> {
         }
     }
 
-    pub(crate) async fn delete<Q: Serialize>(
+    pub(crate) async fn delete<P: Serialize>(
         &mut self,
-        endpoint: &str,
-        query: impl Into<Option<Q>>,
-        body: impl Into<Option<Value>>,
+        endpoint: String,
+        body: impl Into<Option<P>>,
     ) -> Result<()> {
         let res = self
-            .request(Method::DELETE, endpoint, query.into(), body.into())
+            .request(Method::DELETE, endpoint, None, body)
             .await?
             .send()
             .await?;
@@ -244,237 +216,131 @@ impl<F: AuthFlow> Client<Token, F> {
         }
     }
 
-    pub async fn get_album(&mut self, query: AlbumQuery) -> Result<Album> {
-        self.get(&format!("/albums/{}", query.album_id), query, None)
-            .await
+    fn builder<E: Endpoint>(&mut self, endpoint: E) -> Builder<'_, F, E> {
+        Builder {
+            spotify: self,
+            endpoint,
+        }
     }
 
-    pub async fn get_albums(&mut self, query: AlbumsQuery) -> Result<Vec<Album>> {
-        self.get("/albums", query, None)
-            .await
-            .map(|a: Albums| a.albums)
+    pub fn album(&mut self, id: &str) -> Builder<'_, F, AlbumEndpoint> {
+        self.builder(AlbumEndpoint {
+            id: id.to_owned(),
+            market: None,
+        })
     }
 
-    pub async fn get_album_tracks(
-        &mut self,
-        query: AlbumTracksQuery,
-    ) -> Result<Page<SimplifiedTrack>> {
-        self.get(&format!("/albums/{}/tracks", query.album_id), query, None)
-            .await
+    pub fn albums<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, AlbumsEndpoint> {
+        self.builder(AlbumsEndpoint {
+            ids: query_list(ids),
+            market: None,
+        })
     }
 
-    pub async fn get_new_releases(
-        &mut self,
-        query: NewReleaseQuery,
-    ) -> Result<Page<SimplifiedAlbum>> {
-        self.get("/browse/new-releases", query, None)
-            .await
-            .map(|a: PagedAlbums| a.albums)
+    pub fn album_tracks(&mut self, album_id: &str) -> Builder<'_, F, AlbumTracksEndpoint> {
+        self.builder(AlbumTracksEndpoint {
+            id: album_id.to_owned(),
+            ..Default::default()
+        })
     }
 
-    pub async fn get_artist(&mut self, artist_id: &str) -> Result<Artist> {
-        self.get::<(), _>(&format!("/artists/{artist_id}"), None, None)
-            .await
+    pub fn new_releases(&mut self) -> Builder<'_, F, NewReleasesEndpoint> {
+        self.builder(NewReleasesEndpoint::default())
     }
 
-    pub async fn get_artists<T: AsRef<str>>(&mut self, artist_ids: &[T]) -> Result<Vec<Artist>> {
-        self.get("/artists", query_list(artist_ids), None)
+    pub fn artist(&mut self, id: &str) -> Builder<'_, F, ArtistEndpoint> {
+        self.builder(ArtistEndpoint { id: id.to_owned() })
+    }
+
+    pub async fn get_artists<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Vec<Artist>> {
+        self.get("/artists".to_owned(), [("ids", query_list(ids))])
             .await
             .map(|a: Artists| a.artists)
     }
 
-    pub async fn get_artist_albums(
+    pub fn audiobook(&mut self, id: &str) -> Builder<'_, F, AudiobookEndpoint> {
+        self.builder(AudiobookEndpoint {
+            id: id.to_owned(),
+            market: None,
+        })
+    }
+
+    pub fn audiobooks<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, AudiobooksEndpoint> {
+        self.builder(AudiobooksEndpoint {
+            ids: query_list(ids),
+            market: None,
+        })
+    }
+
+    pub fn audiobook_chapters(
         &mut self,
-        query: ArtistAlbumsQuery,
-    ) -> Result<Page<SimplifiedAlbum>> {
-        self.get(&format!("/artists/{}/albums", query.artist_id), query, None)
-            .await
+        audiobook_id: &str,
+    ) -> Builder<'_, F, AudiobookChaptersEndpoint> {
+        self.builder(AudiobookChaptersEndpoint {
+            id: audiobook_id.to_owned(),
+            ..Default::default()
+        })
     }
 
-    pub async fn get_artist_top_tracks(
-        &mut self,
-        query: ArtistTopTracksQuery,
-    ) -> Result<Vec<Track>> {
-        self.get(
-            &format!("/artists/{}/top-tracks", query.artist_id),
-            query,
-            None,
-        )
-        .await
-        .map(|t: Tracks| t.tracks)
+    pub fn browse_category(&mut self, id: &str) -> Builder<'_, F, BrowseCategoryEndpoint> {
+        self.builder(BrowseCategoryEndpoint {
+            id: id.to_owned(),
+            ..Default::default()
+        })
     }
 
-    pub async fn get_artist_related_artists(&mut self, artist_id: &str) -> Result<Vec<Artist>> {
-        self.get::<(), _>(&format!("/artists/{artist_id}/related-artists"), None, None)
-            .await
-            .map(|a: Artists| a.artists)
+    pub fn browse_categories(&mut self) -> Builder<'_, F, BrowseCategoriesEndpoint> {
+        self.builder(BrowseCategoriesEndpoint::default())
     }
 
-    pub async fn get_audiobook(&mut self, query: AudiobookQuery) -> Result<Audiobook> {
-        self.get(&format!("/audiobooks/{}", query.audiobook_id), query, None)
-            .await
+    /// *Note: Spotify's API returns `500 Server error`.*
+    pub fn chapter(&mut self, id: &str) -> Builder<'_, F, ChapterEndpoint> {
+        self.builder(ChapterEndpoint {
+            id: id.to_owned(),
+            market: None,
+        })
     }
 
-    pub async fn get_audiobooks(&mut self, query: AudiobooksQuery) -> Result<Vec<Audiobook>> {
-        self.get("/audiobooks", query, None)
-            .await
-            .map(|a: Audiobooks| a.audiobooks)
+    /// *Note: Spotify's API returns `500 Server error`.*
+    pub fn chapters<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, ChaptersEndpoint> {
+        self.builder(ChaptersEndpoint {
+            ids: query_list(ids),
+            market: None,
+        })
     }
 
-    pub async fn get_audiobook_chapters(
-        &mut self,
-        query: AudiobookChaptersQuery,
-    ) -> Result<Page<SimplifiedChapter>> {
-        self.get(
-            &format!("/audiobooks/{}/chapters", query.audiobook_id),
-            query,
-            None,
-        )
-        .await
+    pub fn episode(&mut self, id: &str) -> Builder<'_, F, EpisodeEndpoint> {
+        self.builder(EpisodeEndpoint {
+            id: id.to_owned(),
+            market: None,
+        })
     }
 
-    pub async fn get_browse_category(&mut self, query: CategoryQuery) -> Result<Category> {
-        self.get(
-            &format!("/browse/categories/{}", query.category_id),
-            query,
-            None,
-        )
-        .await
-    }
-
-    pub async fn get_browse_categories(
-        &mut self,
-        query: CategoriesQuery,
-    ) -> Result<Page<Category>> {
-        self.get("/browse/categories", query, None)
-            .await
-            .map(|c: Categories| c.categories)
-    }
-
-    /// *Note: currently returns `500 Server error`.*
-    pub async fn get_chapter(&mut self, query: ChapterQuery) -> Result<Chapter> {
-        self.get(&format!("/chapters/{}", query.chapter_id), query, None)
-            .await
-    }
-
-    /// *Note: currently returns `500 Server error`.*
-    pub async fn get_chapters(&mut self, query: ChaptersQuery) -> Result<Vec<Chapter>> {
-        self.get("/chapters", query, None)
-            .await
-            .map(|c: Chapters| c.chapters)
-    }
-
-    pub async fn get_episode(&mut self, query: EpisodeQuery) -> Result<Episode> {
-        self.get(&format!("/episodes/{}", query.episode_id), query, None)
-            .await
-    }
-
-    pub async fn get_episodes(&mut self, query: EpisodesQuery) -> Result<Vec<Episode>> {
-        self.get("/episodes", query, None)
-            .await
-            .map(|a: Episodes| a.episodes)
+    pub fn episodes<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, EpisodesEndpoint> {
+        self.builder(EpisodesEndpoint {
+            ids: query_list(ids),
+            market: None,
+        })
     }
 
     pub async fn get_genre_seeds(&mut self) -> Result<Vec<String>> {
-        self.get::<(), _>("/recommendations/available-genre-seeds", None, None)
+        self.get::<(), _>("/recommendations/available-genre-seeds".to_owned(), None)
             .await
             .map(|g: Genres| g.genres)
     }
 }
 
 impl<F: AuthFlow + Authorised> Client<Token, F> {
-    pub async fn get_saved_albums(&mut self, query: SavedAlbumsQuery) -> Result<Page<SavedAlbum>> {
-        self.get("/me/albums", query, None).await
+    pub fn saved_albums(&mut self) -> Builder<'_, F, SavedAlbumsEndpoint> {
+        self.builder(SavedAlbumsEndpoint::default())
     }
 
-    pub async fn save_albums<T: AsRef<str> + Serialize>(&mut self, album_ids: &[T]) -> Result<()> {
-        self.put::<()>("/me/albums", None, json!({ "ids": album_ids }))
-            .await
+    pub fn saved_audiobooks(&mut self) -> Builder<'_, F, SavedAudiobooksEndpoint> {
+        self.builder(SavedAudiobooksEndpoint::default())
     }
 
-    pub async fn remove_saved_albums<T: AsRef<str> + Serialize>(
-        &mut self,
-        album_ids: &[T],
-    ) -> Result<()> {
-        self.delete::<()>("/me/albums", None, json!({ "ids": album_ids }))
-            .await
-    }
-
-    pub async fn check_saved_albums<T: AsRef<str>>(
-        &mut self,
-        album_ids: &[T],
-    ) -> Result<Vec<bool>> {
-        self.get("/me/albums/contains", query_list(album_ids), None)
-            .await
-    }
-
-    pub async fn get_saved_audiobooks(
-        &mut self,
-        query: SavedAudiobooksQuery,
-    ) -> Result<Page<SimplifiedAudiobook>> {
-        self.get("/me/audiobooks", query, None)
-            .await
-            .map(|p: Page<Option<SimplifiedAudiobook>>| Page {
-                href: p.href,
-                limit: p.limit,
-                next: p.next,
-                offset: p.offset,
-                previous: p.previous,
-                total: p.total,
-                items: p.items.into_iter().flatten().collect(),
-            })
-    }
-
-    pub async fn save_audiobooks<T: AsRef<str>>(&mut self, audiobook_ids: &[T]) -> Result<()> {
-        self.put("/me/audiobooks", query_list(audiobook_ids), None)
-            .await
-    }
-
-    pub async fn remove_saved_audiobooks<T: AsRef<str>>(
-        &mut self,
-        audiobook_ids: &[T],
-    ) -> Result<()> {
-        self.delete("/me/audiobooks", query_list(audiobook_ids), None)
-            .await
-    }
-
-    pub async fn check_saved_audiobooks<T: AsRef<str>>(
-        &mut self,
-        audiobook_ids: &[T],
-    ) -> Result<Vec<bool>> {
-        self.get("/me/audiobooks/contains", query_list(audiobook_ids), None)
-            .await
-    }
-
-    pub async fn get_saved_episodes(
-        &mut self,
-        query: SavedEpisodesQuery,
-    ) -> Result<Page<SavedEpisode>> {
-        self.get("/me/episodes", query, None).await
-    }
-
-    pub async fn save_episodes<T: AsRef<str> + Serialize>(
-        &mut self,
-        episode_ids: &[T],
-    ) -> Result<()> {
-        self.put::<()>("/me/episodes", None, json!({ "ids": episode_ids }))
-            .await
-    }
-
-    pub async fn remove_saved_episodes<T: AsRef<str> + Serialize>(
-        &mut self,
-        episode_ids: &[T],
-    ) -> Result<()> {
-        self.delete::<()>("/me/episodes", None, json!({ "ids": episode_ids }))
-            .await
-    }
-
-    pub async fn check_saved_episodes<T: AsRef<str>>(
-        &mut self,
-        episode_ids: &[T],
-    ) -> Result<Vec<bool>> {
-        self.get("/me/episodes/contains", query_list(episode_ids), None)
-            .await
+    pub fn saved_episodes(&mut self) -> Builder<'_, F, SavedEpisodesEndpoint> {
+        self.builder(SavedEpisodesEndpoint::default())
     }
 }
 

@@ -5,13 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [0.3.1] - 2023-08-10
+## [0.3.2] - 2023-08-17
+
+### Changed
+- Changed the approach to the builders, the public API now being endpoint-oriented.
+
+  Getting an album with the optional `market` parameter set:
+  ```rs
+  // before
+  let album = spotify.get_album(AlbumQuery::new("id").market("GB")).await?;
+
+  // after
+  let album = spotify.album("id").market("RO").get().await?;
+  ```
+
+
+## [0.3.1] - 2023-08-10
 
 ### Changed
 
 - Changed the signature of methods that take several IDs to allow for more flexibility in the arguments.
 
-# [0.3.0] - 2023-08-07
+## [0.3.0] - 2023-08-07
 
 ### Added
 
@@ -33,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the existing types for the Implicit Grant flow as it will not be implemented: it's very basic not recommended.
 - Removed `oauth2::AuthorizationUrl` from the public API and re-exported `oauth2::RedirectUrl`.
 
-# [0.2.0] - 2023-08-06
+## [0.2.0] - 2023-08-06
 
 ### Changed
 

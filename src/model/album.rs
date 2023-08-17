@@ -1,5 +1,3 @@
-use std::fmt::{write, Display};
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -83,15 +81,13 @@ pub enum AlbumGroup {
     AppearsOn,
 }
 
-impl Display for AlbumGroup {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
+impl AsRef<str> for AlbumGroup {
+    fn as_ref(&self) -> &str {
+        match self {
             AlbumGroup::Album => "album",
             AlbumGroup::Single => "single",
             AlbumGroup::Compilation => "compilation",
             AlbumGroup::AppearsOn => "appears_on",
-        };
-
-        write!(f, "{s}")
+        }
     }
 }

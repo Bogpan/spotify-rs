@@ -33,6 +33,7 @@ use crate::{
     error::{Error, SpotifyError},
     model::{
         artist::{Artist, Artists},
+        market::Markets,
         recommendation::Genres,
     },
     query_list, Result,
@@ -327,6 +328,12 @@ impl<F: AuthFlow> Client<Token, F> {
         self.get::<(), _>("/recommendations/available-genre-seeds".to_owned(), None)
             .await
             .map(|g: Genres| g.genres)
+    }
+
+    pub async fn get_available_markets(&mut self) -> Result<Vec<String>> {
+        self.get::<(), _>("/markets".to_owned(), None)
+            .await
+            .map(|m: Markets| m.markets)
     }
 }
 

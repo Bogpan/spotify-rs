@@ -3,11 +3,12 @@ use serde_json::json;
 
 use crate::{
     auth::AuthFlow,
+    client::Body,
     model::{
         show::{Episode, Episodes, SavedEpisode},
         Page,
     },
-    query_list, Result,
+    query_list, Nil, Result,
 };
 
 use super::{Builder, Endpoint};
@@ -85,15 +86,18 @@ impl<F: AuthFlow> Builder<'_, F, SavedEpisodesEndpoint> {
             .await
     }
 
-    pub async fn save<T: Serialize>(self, ids: &[T]) -> Result<()> {
+    pub async fn save<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
         self.spotify
-            .put("/me/episodes".to_owned(), json!( { "ids": ids }))
+            .put(
+                "/me/episodes".to_owned(),
+                Body::Json(json!( { "ids": ids })),
+            )
             .await
     }
 
-    pub async fn remove<T: Serialize>(self, ids: &[T]) -> Result<()> {
+    pub async fn remove<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
         self.spotify
-            .delete("/me/episodes".to_owned(), json!( {"ids": ids }))
+            .delete("/me/episodes".to_owned(), Body::Json(json!( {"ids": ids })))
             .await
     }
 

@@ -1,13 +1,13 @@
 [package]
 name = "spotify-rs"
 version = "0.3.2"
-categories = [""]
-description = "A Rust wrapper for the Spotify API."
 edition = "2021"
-license = "MIT OR Apache-2.0"
+description = "A Rust wrapper for the Spotify API."
 readme = "README.md"
 repository = "https://github.com/Bogpan/spotify-rs"
-documentation = "https://docs.rs/spotify-rs"
+license = "MIT OR Apache-2.0"
+keywords = ["spotify", "spotify-api", "api"]
+categories = ["api-bindings", "asynchronous", "web-programming::http-client"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

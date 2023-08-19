@@ -1,15 +1,18 @@
 use std::marker::PhantomData;
 
+use base64::{engine::general_purpose, Engine};
 use oauth2::{
     basic::{
         BasicErrorResponse, BasicRevocationErrorResponse, BasicTokenIntrospectionResponse,
         BasicTokenType,
     },
     reqwest::async_http_client,
-    AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, RedirectUrl, StandardRevocableToken,
+    AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, RedirectUrl, RefreshToken,
+    StandardRevocableToken,
 };
-use reqwest::{header::CONTENT_LENGTH, Method, RequestBuilder};
+use reqwest::{header::CONTENT_LENGTH, Method};
 use serde::{de::DeserializeOwned, Serialize};
+use serde_json::json;
 
 use crate::{
     auth::{
@@ -27,6 +30,12 @@ use crate::{
             ChaptersEndpoint, SavedAudiobooksEndpoint,
         },
         category::{BrowseCategoriesEndpoint, BrowseCategoryEndpoint},
+        playlist::{
+            AddPlaylistItemsEndpoint, CategoryPlaylistsEndpoint, ChangePlaylistDetailsEndpoint,
+            CreatePlaylistEndpoint, CurrentUserPlaylistsEndpoint, FeaturedPlaylistsEndpoint,
+            PlaylistEndpoint, PlaylistItemsEndpoint, RemovePlaylistItemsEndpoint,
+            UpdatePlaylistItemsEndpoint, UserPlaylistsEndpoint,
+        },
         show::{EpisodeEndpoint, EpisodesEndpoint, SavedEpisodesEndpoint},
         Builder, Endpoint,
     },
@@ -35,8 +44,9 @@ use crate::{
         artist::{Artist, Artists},
         market::Markets,
         recommendation::Genres,
+        Image,
     },
-    query_list, Result,
+    query_list, Nil, Result,
 };
 
 pub(crate) type OAuthClient = oauth2::Client<
@@ -47,6 +57,12 @@ pub(crate) type OAuthClient = oauth2::Client<
     StandardRevocableToken,
     BasicRevocationErrorResponse,
 >;
+
+#[doc(hidden)]
+pub(crate) enum Body<P: Serialize = ()> {
+    Json(P),
+    File(Vec<u8>),
+}
 
 #[derive(Debug)]
 pub struct Client<A: AuthenticationState, F: AuthFlow> {
@@ -82,6 +98,43 @@ impl<F: AuthFlow> Client<UnAuthenticated, F> {
 }
 
 impl<F: AuthFlow> Client<Token, F> {
+    pub async fn from_refresh_token<I>(
+        auth_flow: F,
+        redirect_uri: RedirectUrl,
+        auto_refresh: bool,
+        scopes: I,
+        refresh_token: String,
+    ) -> Result<Client<Token, F>>
+    where
+        I: IntoIterator,
+        I::Item: Into<Scope>,
+    {
+        let oauth_client = OAuthClient::new(
+            auth_flow.client_id(),
+            auth_flow.client_secret(),
+            AuthUrl::new("https://accounts.spotify.com/authorize".to_owned()).unwrap(),
+            auth_flow.token_url(),
+        )
+        .set_redirect_uri(redirect_uri);
+
+        let refresh_token = RefreshToken::new(refresh_token);
+
+        let token = oauth_client
+            .exchange_refresh_token(&refresh_token)
+            .add_scopes(scopes.into_iter().map(|i| i.into().0))
+            .request_async(async_http_client)
+            .await?
+            .set_timestamps();
+
+        Ok(Client {
+            auto_refresh,
+            auth: token,
+            oauth: oauth_client,
+            http: reqwest::Client::new(),
+            marker: PhantomData,
+        })
+    }
+
     pub fn access_token(&self) -> &str {
         self.auth.access_token.secret()
     }
@@ -109,19 +162,19 @@ impl<F: AuthFlow> Client<Token, F> {
         Ok(())
     }
 
-    async fn request<P: Serialize>(
+    pub(crate) async fn request<P: Serialize, T: DeserializeOwned>(
         &mut self,
         method: Method,
         endpoint: String,
         query: impl Into<Option<P>>,
-        body: impl Into<Option<P>>,
-    ) -> Result<RequestBuilder> {
+        body: impl Into<Option<Body<P>>>,
+    ) -> Result<T> {
         if self.auth.is_expired() {
             if self.auto_refresh {
-                self.request_refresh_token().await?
+                self.request_refresh_token().await?;
+            } else {
+                return Err(Error::ExpiredToken);
             }
-
-            return Err(Error::ExpiredToken);
         }
 
         let mut req = self
@@ -133,8 +186,11 @@ impl<F: AuthFlow> Client<Token, F> {
             req = req.query(&q);
         }
 
-        if let Some(j) = body.into() {
-            req = req.json(&j);
+        if let Some(b) = body.into() {
+            match b {
+                Body::Json(j) => req = req.json(&j),
+                Body::File(f) => req = req.body(f),
+            }
         } else {
             // Used because Spotify wants a Content-Length header for the PUT /audiobooks/me endpoint even though there is no body
             // If not supplied, it will return an error in the form of HTML (not JSON), which I believe to be an issue on their end.
@@ -142,19 +198,11 @@ impl<F: AuthFlow> Client<Token, F> {
             req = req.header(CONTENT_LENGTH, 0);
         }
 
-        Ok(req)
-    }
+        // let req = req.build().unwrap();
+        // dbg!(req.headers());
+        // return Err(Error::NotAuthenticated);
 
-    pub(crate) async fn get<P: Serialize, T: DeserializeOwned>(
-        &mut self,
-        endpoint: String,
-        query: impl Into<Option<P>>,
-    ) -> Result<T> {
-        let res = self
-            .request(Method::GET, endpoint, query, None)
-            .await?
-            .send()
-            .await?;
+        let res = req.send().await?;
 
         if res.status().is_success() {
             Ok(res.json().await?)
@@ -163,58 +211,36 @@ impl<F: AuthFlow> Client<Token, F> {
         }
     }
 
-    pub(crate) async fn post<P: Serialize>(
+    pub(crate) async fn get<P: Serialize, T: DeserializeOwned>(
         &mut self,
         endpoint: String,
-        body: impl Into<Option<P>>,
-    ) -> Result<()> {
-        let res = self
-            .request(Method::POST, endpoint, None, body)
-            .await?
-            .send()
-            .await?;
-
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            Err(res.json::<SpotifyError>().await?.into())
-        }
+        query: impl Into<Option<P>>,
+    ) -> Result<T> {
+        self.request(Method::GET, endpoint, query, None).await
     }
 
-    pub(crate) async fn put<P: Serialize>(
+    pub(crate) async fn post<P: Serialize, T: DeserializeOwned>(
         &mut self,
         endpoint: String,
-        body: impl Into<Option<P>>,
-    ) -> Result<()> {
-        let res = self
-            .request(Method::PUT, endpoint, None, body)
-            .await?
-            .send()
-            .await?;
-
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            Err(res.json::<SpotifyError>().await?.into())
-        }
+        body: impl Into<Option<Body<P>>>,
+    ) -> Result<T> {
+        self.request(Method::POST, endpoint, None, body).await
     }
 
-    pub(crate) async fn delete<P: Serialize>(
+    pub(crate) async fn put<P: Serialize, T: DeserializeOwned>(
         &mut self,
         endpoint: String,
-        body: impl Into<Option<P>>,
-    ) -> Result<()> {
-        let res = self
-            .request(Method::DELETE, endpoint, None, body)
-            .await?
-            .send()
-            .await?;
+        body: impl Into<Option<Body<P>>>,
+    ) -> Result<T> {
+        self.request(Method::PUT, endpoint, None, body).await
+    }
 
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            Err(res.json::<SpotifyError>().await?.into())
-        }
+    pub(crate) async fn delete<P: Serialize, T: DeserializeOwned>(
+        &mut self,
+        endpoint: String,
+        body: impl Into<Option<Body<P>>>,
+    ) -> Result<T> {
+        self.request(Method::DELETE, endpoint, None, body).await
     }
 
     fn builder<E: Endpoint>(&mut self, endpoint: E) -> Builder<'_, F, E> {
@@ -335,6 +361,118 @@ impl<F: AuthFlow> Client<Token, F> {
             .await
             .map(|m: Markets| m.markets)
     }
+
+    pub fn playlist(&mut self, id: &str) -> Builder<'_, F, PlaylistEndpoint> {
+        self.builder(PlaylistEndpoint {
+            id: id.to_owned(),
+            ..Default::default()
+        })
+    }
+
+    pub fn change_playlist_details(
+        &mut self,
+        id: &str,
+    ) -> Builder<'_, F, ChangePlaylistDetailsEndpoint> {
+        self.builder(ChangePlaylistDetailsEndpoint {
+            id: id.to_owned(),
+            ..Default::default()
+        })
+    }
+
+    pub fn playlist_items(&mut self, id: &str) -> Builder<'_, F, PlaylistItemsEndpoint> {
+        self.builder(PlaylistItemsEndpoint {
+            id: id.to_owned(),
+            ..Default::default()
+        })
+    }
+
+    pub fn update_playlist_items(
+        &mut self,
+        id: &str,
+        range_start: u32,
+        insert_before: u32,
+    ) -> Builder<'_, F, UpdatePlaylistItemsEndpoint> {
+        self.builder(UpdatePlaylistItemsEndpoint {
+            id: id.to_owned(),
+            range_start,
+            insert_before,
+            ..Default::default()
+        })
+    }
+
+    pub fn add_items_to_playlist<T: ToString>(
+        &mut self,
+        id: &str,
+        item_uris: &[T],
+    ) -> Builder<'_, F, AddPlaylistItemsEndpoint> {
+        self.builder(AddPlaylistItemsEndpoint {
+            id: id.to_owned(),
+            uris: item_uris.iter().map(ToString::to_string).collect(),
+            position: None,
+        })
+    }
+
+    pub fn remove_playlist_items<T: AsRef<str>>(
+        &mut self,
+        id: &str,
+        item_uris: &[T],
+    ) -> Builder<'_, F, RemovePlaylistItemsEndpoint> {
+        let tracks = item_uris
+            .iter()
+            .map(|u| json!({ "uri": u.as_ref() }))
+            .collect();
+
+        self.builder(RemovePlaylistItemsEndpoint {
+            id: id.to_owned(),
+            tracks,
+            snapshot_id: None,
+        })
+    }
+
+    pub fn user_playlists(&mut self, user_id: &str) -> Builder<'_, F, UserPlaylistsEndpoint> {
+        self.builder(UserPlaylistsEndpoint {
+            id: user_id.to_owned(),
+            ..Default::default()
+        })
+    }
+
+    pub fn create_playlist(
+        &mut self,
+        user_id: &str,
+        name: &str,
+    ) -> Builder<'_, F, CreatePlaylistEndpoint> {
+        self.builder(CreatePlaylistEndpoint {
+            user_id: user_id.to_owned(),
+            name: name.to_owned(),
+            ..Default::default()
+        })
+    }
+
+    pub fn featured_playlists(&mut self) -> Builder<'_, F, FeaturedPlaylistsEndpoint> {
+        self.builder(FeaturedPlaylistsEndpoint::default())
+    }
+
+    pub fn category_playlists(
+        &mut self,
+        category_id: &str,
+    ) -> Builder<'_, F, CategoryPlaylistsEndpoint> {
+        self.builder(CategoryPlaylistsEndpoint {
+            id: category_id.to_owned(),
+            ..Default::default()
+        })
+    }
+
+    pub async fn get_playlist_image(&mut self, id: &str) -> Result<Vec<Image>> {
+        self.get::<(), _>(format!("/playlists/{id}/images"), None)
+            .await
+    }
+
+    pub async fn add_playlist_image(&mut self, id: &str, image: &[u8]) -> Result<Nil> {
+        let encoded_image = general_purpose::STANDARD.encode(image).into_bytes();
+        let body = <Body>::File(encoded_image);
+
+        self.put(format!("/playlists/{id}/images"), body).await
+    }
 }
 
 impl<F: AuthFlow + Authorised> Client<Token, F> {
@@ -348,6 +486,10 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
 
     pub fn saved_episodes(&mut self) -> Builder<'_, F, SavedEpisodesEndpoint> {
         self.builder(SavedEpisodesEndpoint::default())
+    }
+
+    pub fn current_user_playlists(&mut self) -> Builder<'_, F, CurrentUserPlaylistsEndpoint> {
+        self.builder(CurrentUserPlaylistsEndpoint::default())
     }
 }
 

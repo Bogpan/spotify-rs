@@ -82,7 +82,7 @@ pub struct Authorisation {
 pub struct Scope(pub(crate) oauth2::Scope);
 
 impl Token {
-    pub fn set_timestamps(self) -> Self {
+    pub(crate) fn set_timestamps(self) -> Self {
         let created_at = Utc::now();
         let expires_at = created_at
             + chrono::Duration::seconds(i64::try_from(self.expires_in).unwrap_or(i64::MAX));

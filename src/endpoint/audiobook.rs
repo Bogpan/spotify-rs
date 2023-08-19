@@ -8,7 +8,7 @@ use crate::{
         },
         Page,
     },
-    query_list, Result,
+    query_list, Nil, Result,
 };
 
 use super::{Builder, Endpoint};
@@ -129,15 +129,15 @@ impl<F: AuthFlow> Builder<'_, F, SavedAudiobooksEndpoint> {
             })
     }
 
-    pub async fn save<T: AsRef<str>>(self, ids: &[T]) -> Result<()> {
+    pub async fn save<T: AsRef<str>>(self, ids: &[T]) -> Result<Nil> {
         self.spotify
-            .put::<()>(format!("/me/audiobooks?ids={}", query_list(ids)), None)
+            .put::<(), _>(format!("/me/audiobooks?ids={}", query_list(ids)), None)
             .await
     }
 
-    pub async fn remove<T: AsRef<str>>(self, ids: &[T]) -> Result<()> {
+    pub async fn remove<T: AsRef<str>>(self, ids: &[T]) -> Result<Nil> {
         self.spotify
-            .delete::<()>(format!("/me/audiobooks?ids={}", query_list(ids)), None)
+            .delete::<(), _>(format!("/me/audiobooks?ids={}", query_list(ids)), None)
             .await
     }
 

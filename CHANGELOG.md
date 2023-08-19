@@ -5,9 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+ - New route: [playlist](https://developer.spotify.com/documentation/web-api/reference/get-playlist).
+ - `Client::from_refresh_token()` method that allows you get a new client using an existing refresh token.
+
+### Changed
+
+ - Methods with empty API responses now return [`Nil`](https://docs.rs/spotify-rs/latest/spotify_rs/struct.Nil.html) instead of `()`, in order to make deserialization from empty responses easy while keeping flexibility.
+
 ## [0.3.2] - 2023-08-17
 
 ### Changed
+
 - Changed the approach to the builders, the public API now being endpoint-oriented.
 
   Getting an album with the optional `market` parameter set:

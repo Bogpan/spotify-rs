@@ -17,28 +17,12 @@ impl Endpoint for ArtistAlbumsEndpoint {}
 impl Endpoint for ArtistTopTracksEndpoint {}
 impl Endpoint for ArtistEndpoint {}
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct ArtistEndpoint {
     pub(crate) id: String,
 }
 
 impl<'a, F: AuthFlow> Builder<'a, F, ArtistEndpoint> {
-    pub async fn get(self) -> Result<Artist> {
-        self.spotify
-            .get::<(), _>(format!("/artists/{}", self.endpoint.id), None)
-            .await
-    }
-
-    pub async fn get_related_artists(self) -> Result<Vec<Artist>> {
-        self.spotify
-            .get::<(), _>(
-                format!("/artists/{}/related-artists", self.endpoint.id),
-                None,
-            )
-            .await
-            .map(|a: Artists| a.artists)
-    }
-
     pub fn albums(self) -> Builder<'a, F, ArtistAlbumsEndpoint> {
         Builder {
             spotify: self.spotify,
@@ -57,6 +41,22 @@ impl<'a, F: AuthFlow> Builder<'a, F, ArtistEndpoint> {
                 market: None,
             },
         }
+    }
+
+    pub async fn get(self) -> Result<Artist> {
+        self.spotify
+            .get::<(), _>(format!("/artists/{}", self.endpoint.id), None)
+            .await
+    }
+
+    pub async fn get_related_artists(self) -> Result<Vec<Artist>> {
+        self.spotify
+            .get::<(), _>(
+                format!("/artists/{}/related-artists", self.endpoint.id),
+                None,
+            )
+            .await
+            .map(|a: Artists| a.artists)
     }
 }
 

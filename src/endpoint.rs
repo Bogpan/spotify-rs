@@ -10,6 +10,7 @@ pub mod artist;
 pub mod audiobook;
 pub mod category;
 pub mod playlist;
+pub mod search;
 pub mod show;
 
 pub trait Endpoint: Serialize {}

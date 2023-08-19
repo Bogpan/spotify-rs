@@ -9,6 +9,7 @@ pub mod market;
 pub mod player;
 pub mod playlist;
 pub mod recommendation;
+pub mod search;
 pub mod show;
 pub mod track;
 pub mod user;

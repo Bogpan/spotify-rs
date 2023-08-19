@@ -36,6 +36,7 @@ use crate::{
             PlaylistEndpoint, PlaylistItemsEndpoint, RemovePlaylistItemsEndpoint,
             UpdatePlaylistItemsEndpoint, UserPlaylistsEndpoint,
         },
+        search::SearchEndpoint,
         show::{EpisodeEndpoint, EpisodesEndpoint, SavedEpisodesEndpoint},
         Builder, Endpoint,
     },
@@ -44,6 +45,7 @@ use crate::{
         artist::{Artist, Artists},
         market::Markets,
         recommendation::Genres,
+        search::Item,
         Image,
     },
     query_list, Nil, Result,
@@ -472,6 +474,16 @@ impl<F: AuthFlow> Client<Token, F> {
         let body = <Body>::File(encoded_image);
 
         self.put(format!("/playlists/{id}/images"), body).await
+    }
+
+    pub fn search(&mut self, query: &str, item_types: &[Item]) -> Builder<'_, F, SearchEndpoint> {
+        let r#type = query_list(item_types);
+
+        self.builder(SearchEndpoint {
+            query: query.to_owned(),
+            r#type,
+            ..Default::default()
+        })
     }
 }
 

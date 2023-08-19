@@ -5,7 +5,7 @@ use crate::{
     auth::AuthFlow,
     client::Body,
     model::{
-        show::{Episode, Episodes, SavedEpisode},
+        show::{Episode, Episodes, SavedEpisode, Show, Shows, SimplifiedShow},
         Page,
     },
     query_list, Nil, Result,
@@ -13,9 +13,51 @@ use crate::{
 
 use super::{Builder, Endpoint, Limit};
 
+impl Endpoint for ShowEndpoint {}
+impl Endpoint for ShowsEndpoint {}
 impl Endpoint for EpisodeEndpoint {}
 impl Endpoint for EpisodesEndpoint {}
 impl Endpoint for SavedEpisodesEndpoint {}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct ShowEndpoint {
+    #[serde(skip)]
+    pub(crate) id: String,
+    pub(crate) market: Option<String>,
+}
+
+impl<F: AuthFlow> Builder<'_, F, ShowEndpoint> {
+    pub fn market(mut self, market: &str) -> Self {
+        self.endpoint.market = Some(market.to_owned());
+        self
+    }
+
+    pub async fn get(self) -> Result<Show> {
+        self.spotify
+            .get(format!("/shows/{}", self.endpoint.id), self.endpoint)
+            .await
+    }
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct ShowsEndpoint {
+    pub(crate) ids: String,
+    pub(crate) market: Option<String>,
+}
+
+impl<F: AuthFlow> Builder<'_, F, ShowsEndpoint> {
+    pub fn market(mut self, market: &str) -> Self {
+        self.endpoint.market = Some(market.to_owned());
+        self
+    }
+
+    pub async fn get(self) -> Result<Vec<SimplifiedShow>> {
+        self.spotify
+            .get("/shows/".to_owned(), self.endpoint)
+            .await
+            .map(|s: Shows| s.shows)
+    }
+}
 
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct EpisodeEndpoint {

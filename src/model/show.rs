@@ -50,8 +50,13 @@ pub struct SimplifiedShow {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct SavedShow {
-    added_at: DateTime<Utc>,
-    show: SimplifiedShow,
+    pub added_at: DateTime<Utc>,
+    pub show: SimplifiedShow,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct Shows {
+    pub(crate) shows: Vec<SimplifiedShow>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

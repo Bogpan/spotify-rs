@@ -37,7 +37,9 @@ use crate::{
             UpdatePlaylistItemsEndpoint, UserPlaylistsEndpoint,
         },
         search::SearchEndpoint,
-        show::{EpisodeEndpoint, EpisodesEndpoint, SavedEpisodesEndpoint},
+        show::{
+            EpisodeEndpoint, EpisodesEndpoint, SavedEpisodesEndpoint, ShowEndpoint, ShowsEndpoint,
+        },
         Builder, Endpoint,
     },
     error::{Error, SpotifyError},
@@ -483,6 +485,20 @@ impl<F: AuthFlow> Client<Token, F> {
             query: query.to_owned(),
             r#type,
             ..Default::default()
+        })
+    }
+
+    pub fn show(&mut self, id: &str) -> Builder<'_, F, ShowEndpoint> {
+        self.builder(ShowEndpoint {
+            id: id.to_owned(),
+            market: None,
+        })
+    }
+
+    pub fn shows<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, ShowsEndpoint> {
+        self.builder(ShowsEndpoint {
+            ids: query_list(ids),
+            market: None,
         })
     }
 }

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
- - New route: [playlist](https://developer.spotify.com/documentation/web-api/reference/get-playlist).
+ - New endpoint: [playlist](https://developer.spotify.com/documentation/web-api/reference/get-playlist).
  - `Client::from_refresh_token()` method that allows you get a new client using an existing refresh token.
 
 ### Changed

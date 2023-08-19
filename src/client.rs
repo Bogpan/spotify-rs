@@ -501,6 +501,13 @@ impl<F: AuthFlow> Client<Token, F> {
             market: None,
         })
     }
+
+    pub fn show_episodes(&mut self, show_id: &str) -> Builder<'_, F, ShowEpisodesEndpoint> {
+        self.builder(ShowEpisodesEndpoint {
+            show_id: show_id.to_owned(),
+            ..Default::default()
+        })
+    }
 }
 
 impl<F: AuthFlow + Authorised> Client<Token, F> {
@@ -518,6 +525,10 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
 
     pub fn current_user_playlists(&mut self) -> Builder<'_, F, CurrentUserPlaylistsEndpoint> {
         self.builder(CurrentUserPlaylistsEndpoint::default())
+    }
+
+    pub fn saved_shows(&mut self) -> Builder<'_, F, SavedShowsEndpoint> {
+        self.builder(SavedShowsEndpoint::default())
     }
 }
 

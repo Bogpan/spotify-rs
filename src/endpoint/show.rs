@@ -5,7 +5,10 @@ use crate::{
     auth::AuthFlow,
     client::Body,
     model::{
-        show::{Episode, Episodes, SavedEpisode, Show, Shows, SimplifiedShow},
+        show::{
+            Episode, Episodes, SavedEpisode, SavedShow, Show, Shows, SimplifiedEpisode,
+            SimplifiedShow,
+        },
         Page,
     },
     query_list, Nil, Result,
@@ -15,6 +18,8 @@ use super::{Builder, Endpoint, Limit};
 
 impl Endpoint for ShowEndpoint {}
 impl Endpoint for ShowsEndpoint {}
+impl Endpoint for ShowEpisodesEndpoint {}
+impl Endpoint for SavedShowsEndpoint {}
 impl Endpoint for EpisodeEndpoint {}
 impl Endpoint for EpisodesEndpoint {}
 impl Endpoint for SavedEpisodesEndpoint {}
@@ -56,6 +61,83 @@ impl<F: AuthFlow> Builder<'_, F, ShowsEndpoint> {
             .get("/shows/".to_owned(), self.endpoint)
             .await
             .map(|s: Shows| s.shows)
+    }
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct ShowEpisodesEndpoint {
+    #[serde(skip)]
+    pub(crate) show_id: String,
+    pub(crate) market: Option<String>,
+    pub(crate) limit: Option<Limit>,
+    pub(crate) offset: Option<u32>,
+}
+
+impl<F: AuthFlow> Builder<'_, F, ShowEpisodesEndpoint> {
+    pub fn market(mut self, market: &str) -> Self {
+        self.endpoint.market = Some(market.to_owned());
+        self
+    }
+
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.endpoint.limit = Some(Limit::new(limit));
+        self
+    }
+
+    pub fn offset(mut self, offset: u32) -> Self {
+        self.endpoint.offset = Some(offset);
+        self
+    }
+
+    pub async fn get(self) -> Result<Page<SimplifiedEpisode>> {
+        self.spotify
+            .get(
+                format!("/shows/{}/episodes", self.endpoint.show_id),
+                self.endpoint,
+            )
+            .await
+    }
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct SavedShowsEndpoint {
+    pub(crate) limit: Option<Limit>,
+    pub(crate) offset: Option<u32>,
+}
+
+impl<F: AuthFlow> Builder<'_, F, SavedShowsEndpoint> {
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.endpoint.limit = Some(Limit::new(limit));
+        self
+    }
+
+    pub fn offset(mut self, offset: u32) -> Self {
+        self.endpoint.offset = Some(offset);
+        self
+    }
+
+    pub async fn get(self) -> Result<Page<SavedShow>> {
+        self.spotify
+            .get("/me/shows".to_owned(), self.endpoint)
+            .await
+    }
+
+    pub async fn save<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
+        self.spotify
+            .put("/me/shows".to_owned(), Body::Json(json!({ "ids": ids })))
+            .await
+    }
+
+    pub async fn remove<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
+        self.spotify
+            .delete("/me/shows".to_owned(), Body::Json(json!({ "ids": ids })))
+            .await
+    }
+
+    pub async fn check<T: AsRef<str>>(self, ids: &[T]) -> Result<Vec<bool>> {
+        self.spotify
+            .get("/me/shows/contains".to_owned(), [("ids", query_list(ids))])
+            .await
     }
 }
 

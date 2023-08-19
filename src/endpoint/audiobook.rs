@@ -11,7 +11,7 @@ use crate::{
     query_list, Nil, Result,
 };
 
-use super::{Builder, Endpoint};
+use super::{Builder, Endpoint, Limit};
 
 impl Endpoint for AudiobookEndpoint {}
 impl Endpoint for AudiobooksEndpoint {}
@@ -65,7 +65,7 @@ pub struct AudiobookChaptersEndpoint {
     #[serde(skip)]
     pub(crate) id: String,
     pub(crate) market: Option<String>,
-    pub(crate) limit: Option<u32>,
+    pub(crate) limit: Option<Limit>,
     pub(crate) offset: Option<u32>,
 }
 
@@ -76,7 +76,7 @@ impl<F: AuthFlow> Builder<'_, F, AudiobookChaptersEndpoint> {
     }
 
     pub fn limit(mut self, limit: u32) -> Self {
-        self.endpoint.limit = Some(limit);
+        self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
@@ -97,13 +97,13 @@ impl<F: AuthFlow> Builder<'_, F, AudiobookChaptersEndpoint> {
 
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct SavedAudiobooksEndpoint {
-    pub(crate) limit: Option<u32>,
+    pub(crate) limit: Option<Limit>,
     pub(crate) offset: Option<u32>,
 }
 
 impl<F: AuthFlow> Builder<'_, F, SavedAudiobooksEndpoint> {
     pub fn limit(mut self, limit: u32) -> Self {
-        self.endpoint.limit = Some(limit);
+        self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 

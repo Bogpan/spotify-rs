@@ -13,7 +13,7 @@ use crate::{
     Nil, Result,
 };
 
-use super::{Builder, Endpoint, PrivateEndpoint};
+use super::{Builder, Endpoint, Limit, PrivateEndpoint};
 
 impl Endpoint for PlaylistEndpoint {}
 impl Endpoint for ChangePlaylistDetailsEndpoint {}
@@ -104,7 +104,7 @@ pub struct PlaylistItemsEndpoint {
     pub(crate) id: String,
     pub(crate) market: Option<String>,
     pub(crate) fields: Option<String>,
-    pub(crate) limit: Option<u32>,
+    pub(crate) limit: Option<Limit>,
     pub(crate) offset: Option<u32>,
 }
 
@@ -120,7 +120,7 @@ impl<F: AuthFlow> Builder<'_, F, PlaylistItemsEndpoint> {
     }
 
     pub fn limit(mut self, limit: u32) -> Self {
-        self.endpoint.limit = Some(limit);
+        self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
@@ -234,13 +234,13 @@ impl<F: AuthFlow> Builder<'_, F, RemovePlaylistItemsEndpoint> {
 
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct CurrentUserPlaylistsEndpoint {
-    pub(crate) limit: Option<u32>,
+    pub(crate) limit: Option<Limit>,
     pub(crate) offset: Option<u32>,
 }
 
 impl<F: AuthFlow> Builder<'_, F, CurrentUserPlaylistsEndpoint> {
     pub fn limit(mut self, limit: u32) -> Self {
-        self.endpoint.limit = Some(limit);
+        self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
@@ -260,13 +260,13 @@ impl<F: AuthFlow> Builder<'_, F, CurrentUserPlaylistsEndpoint> {
 pub struct UserPlaylistsEndpoint {
     #[serde(skip)]
     pub(crate) id: String,
-    pub(crate) limit: Option<u32>,
+    pub(crate) limit: Option<Limit>,
     pub(crate) offset: Option<u32>,
 }
 
 impl<F: AuthFlow> Builder<'_, F, UserPlaylistsEndpoint> {
     pub fn limit(mut self, limit: u32) -> Self {
-        self.endpoint.limit = Some(limit);
+        self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
@@ -327,7 +327,7 @@ pub struct FeaturedPlaylistsEndpoint {
     pub(crate) country: Option<String>,
     pub(crate) locale: Option<String>,
     pub(crate) timestamp: Option<String>,
-    pub(crate) limit: Option<u32>,
+    pub(crate) limit: Option<Limit>,
     pub(crate) offset: Option<u32>,
 }
 
@@ -348,7 +348,7 @@ impl<F: AuthFlow> Builder<'_, F, FeaturedPlaylistsEndpoint> {
     }
 
     pub fn limit(mut self, limit: u32) -> Self {
-        self.endpoint.limit = Some(limit);
+        self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
@@ -369,7 +369,7 @@ pub struct CategoryPlaylistsEndpoint {
     #[serde(skip)]
     pub(crate) id: String,
     pub(crate) country: Option<String>,
-    pub(crate) limit: Option<u32>,
+    pub(crate) limit: Option<Limit>,
     pub(crate) offset: Option<u32>,
 }
 
@@ -380,7 +380,7 @@ impl<F: AuthFlow> Builder<'_, F, CategoryPlaylistsEndpoint> {
     }
 
     pub fn limit(mut self, limit: u32) -> Self {
-        self.endpoint.limit = Some(limit);
+        self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 

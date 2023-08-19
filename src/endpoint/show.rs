@@ -11,7 +11,7 @@ use crate::{
     query_list, Nil, Result,
 };
 
-use super::{Builder, Endpoint};
+use super::{Builder, Endpoint, Limit};
 
 impl Endpoint for EpisodeEndpoint {}
 impl Endpoint for EpisodesEndpoint {}
@@ -60,7 +60,7 @@ impl<F: AuthFlow> Builder<'_, F, EpisodesEndpoint> {
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct SavedEpisodesEndpoint {
     pub(crate) market: Option<String>,
-    pub(crate) limit: Option<u32>,
+    pub(crate) limit: Option<Limit>,
     pub(crate) offset: Option<u32>,
 }
 
@@ -71,7 +71,7 @@ impl<F: AuthFlow> Builder<'_, F, SavedEpisodesEndpoint> {
     }
 
     pub fn limit(mut self, limit: u32) -> Self {
-        self.endpoint.limit = Some(limit);
+        self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 

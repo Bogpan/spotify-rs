@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::{auth::AuthFlow, model::search::SearchResults, Result};
 
-use super::{Builder, Endpoint};
+use super::{Builder, Endpoint, Limit};
 
 impl Endpoint for SearchEndpoint {}
 
@@ -14,7 +14,7 @@ pub struct SearchEndpoint {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) market: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) limit: Option<u32>,
+    pub(crate) limit: Option<Limit>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) offset: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -28,7 +28,7 @@ impl<F: AuthFlow> Builder<'_, F, SearchEndpoint> {
     }
 
     pub fn limit(mut self, limit: u32) -> Self {
-        self.endpoint.limit = Some(limit);
+        self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 

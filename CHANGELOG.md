@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
- - New endpoints: [playlist](https://developer.spotify.com/documentation/web-api/reference/get-playlist),
- [search](https://developer.spotify.com/documentation/web-api/reference/search).
+ - New endpoints: [playlists](https://developer.spotify.com/documentation/web-api/reference/get-playlist),
+  [search](https://developer.spotify.com/documentation/web-api/reference/search),
+  [shows](https://developer.spotify.com/documentation/web-api/reference/get-a-show).
  - `Client::from_refresh_token()` method that allows you get a new client using an existing refresh token.
  - Internal `BoundedU32<const MIN: u32, const MAX: u32>` type that clamps a u32 to `MIN, MAX` upon creation. `Limit` is a `BoundedU32<1, 50>` -
   what Spotify uses for its limits. u32s passed by users are converted to said type. This might be unpredictable behaviour for the users,

@@ -38,7 +38,13 @@ use crate::{
         },
         search::SearchEndpoint,
         show::{
-            EpisodeEndpoint, EpisodesEndpoint, SavedEpisodesEndpoint, ShowEndpoint, ShowsEndpoint,
+            EpisodeEndpoint, EpisodesEndpoint, SavedEpisodesEndpoint, SavedShowsEndpoint,
+            ShowEndpoint, ShowEpisodesEndpoint, ShowsEndpoint,
+        },
+        track::{SavedTracksEndpoint, TrackEndpoint, TracksEndpoint},
+        user::{
+            FollowPlaylistBuilder, FollowUserOrArtistEndpoint, FollowedArtistsBuilder,
+            UserTopItemsEndpoint,
         },
         Builder, Endpoint,
     },
@@ -48,6 +54,7 @@ use crate::{
         market::Markets,
         recommendation::Genres,
         search::Item,
+        user::{User, UserItemType},
         Image,
     },
     query_list, Nil, Result,

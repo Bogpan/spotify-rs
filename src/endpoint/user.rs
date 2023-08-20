@@ -12,7 +12,7 @@ use crate::{
     query_list, Nil, Result,
 };
 
-use super::{Builder, Endpoint, Limit};
+use super::{Builder, Endpoint, Limit, PrivateEndpoint};
 
 impl Endpoint for UserTopItemsEndpoint {}
 impl Endpoint for FollowPlaylistBuilder {}
@@ -69,7 +69,7 @@ impl<F: AuthFlow> Builder<'_, F, FollowPlaylistBuilder> {
         self.spotify
             .put(
                 format!("/playlists/{}/followers", self.endpoint.id),
-                Body::Json(self.endpoint),
+                self.endpoint.json(),
             )
             .await
     }

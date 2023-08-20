@@ -1,6 +1,8 @@
-use serde::Deserialize;
+use std::fmt::Display;
 
-use super::*;
+use serde::{Deserialize, Serialize};
+
+use super::{artist::Artist, track::Track, *};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct PrivateUser {
@@ -48,4 +50,38 @@ pub struct ReferenceUser {
 pub struct ExplicitContent {
     pub filter_enabled: bool,
     pub filter_locked: bool,
+}
+
+#[derive(Clone, Debug, Default)]
+pub enum UserItemType {
+    #[default]
+    Artists,
+    Tracks,
+}
+
+impl Display for UserItemType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            UserItemType::Artists => "artists",
+            UserItemType::Tracks => "tracks",
+        };
+
+        write!(f, "{s}")
+    }
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TimeRange {
+    LongTerm,
+    #[default]
+    MediumTerm,
+    ShortTerm,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(untagged)]
+pub enum UserItem {
+    Artist(Box<Artist>),
+    Track(Box<Track>),
 }

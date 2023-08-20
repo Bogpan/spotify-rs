@@ -67,8 +67,11 @@ pub(crate) struct PagedAlbums {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AlbumType {
+    #[serde(alias = "ALBUM")]
     Album,
+    #[serde(alias = "SINGLE")]
     Single,
+    #[serde(alias = "COMPILATION")]
     Compilation,
 }
 

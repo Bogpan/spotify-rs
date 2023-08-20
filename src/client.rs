@@ -522,6 +522,22 @@ impl<F: AuthFlow> Client<Token, F> {
             market: None,
         })
     }
+
+    pub async fn get_user(&mut self, id: &str) -> Result<User> {
+        self.get::<(), _>(format!("/users/{id}"), None).await
+    }
+
+    pub async fn check_if_users_follow_playlist(
+        &mut self,
+        playlist_id: &str,
+        user_ids: &[&str],
+    ) -> Result<Vec<bool>> {
+        self.get(
+            format!("/playlists/{playlist_id}/followers/contains"),
+            [("ids", query_list(user_ids))],
+        )
+        .await
+    }
 }
 
 impl<F: AuthFlow + Authorised> Client<Token, F> {
@@ -547,6 +563,54 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
 
     pub fn saved_tracks(&mut self) -> Builder<'_, F, SavedTracksEndpoint> {
         self.builder(SavedTracksEndpoint::default())
+    }
+
+    pub async fn get_current_user_profile(&mut self) -> Result<User> {
+        self.get::<(), _>("/me".to_owned(), None).await
+    }
+
+    pub fn current_user_top_items(
+        &mut self,
+        r#type: UserItemType,
+    ) -> Builder<'_, F, UserTopItemsEndpoint> {
+        self.builder(UserTopItemsEndpoint {
+            r#type,
+            ..Default::default()
+        })
+    }
+
+    pub fn follow_playlist(&mut self, id: &str) -> Builder<'_, F, FollowPlaylistBuilder> {
+        self.builder(FollowPlaylistBuilder {
+            id: id.to_owned(),
+            public: None,
+        })
+    }
+
+    pub async fn unfollow_playlist(&mut self, id: &str) -> Result<Nil> {
+        self.delete::<(), _>(format!("/playlists/{id}/followers"), None)
+            .await
+    }
+
+    pub fn followed_artists(&mut self) -> Builder<'_, F, FollowedArtistsBuilder> {
+        // Currently only the "artist" type is supported, so it's hardcoded.
+        self.builder(FollowedArtistsBuilder {
+            r#type: "artist".to_owned(),
+            ..Default::default()
+        })
+    }
+
+    pub fn follow_artists(&mut self, ids: &[&str]) -> Builder<'_, F, FollowUserOrArtistEndpoint> {
+        self.builder(FollowUserOrArtistEndpoint {
+            r#type: "artist".to_owned(),
+            ids: ids.iter().map(|i| i.to_string()).collect(),
+        })
+    }
+
+    pub fn follow_users(&mut self, ids: &[&str]) -> Builder<'_, F, FollowUserOrArtistEndpoint> {
+        self.builder(FollowUserOrArtistEndpoint {
+            r#type: "user".to_owned(),
+            ids: ids.iter().map(|i| i.to_string()).collect(),
+        })
     }
 }
 

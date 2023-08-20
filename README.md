@@ -1,14 +1,11 @@
 # spotify-rs
 spotify-rs is a Rust wrapper for the Spotify API.
 
-Currently, the following endpoints are missing:
-- player
-- users
-
-More will be added in the near future. The library is in its infancy and breaking changes will occur.
+Currently, the player endpoint is missing.
 
 Documentation will be added once full API coverage is achieved (not much left!).
 
+The library is in its infancy and breaking changes will occur.
 Any feedback is appreciated.
 
 ## License

@@ -30,3 +30,8 @@ pub struct SimplifiedArtist {
 pub(crate) struct Artists {
     pub(crate) artists: Vec<Artist>,
 }
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct PagedArtists {
+    pub(crate) artists: CursorPage<Artist>,
+}

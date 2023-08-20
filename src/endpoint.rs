@@ -9,6 +9,7 @@ pub mod album;
 pub mod artist;
 pub mod audiobook;
 pub mod category;
+pub mod player;
 pub mod playlist;
 pub mod search;
 pub mod show;

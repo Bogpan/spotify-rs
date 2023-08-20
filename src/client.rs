@@ -508,6 +508,20 @@ impl<F: AuthFlow> Client<Token, F> {
             ..Default::default()
         })
     }
+
+    pub fn track(&mut self, id: &str) -> Builder<'_, F, TrackEndpoint> {
+        self.builder(TrackEndpoint {
+            id: id.to_owned(),
+            market: None,
+        })
+    }
+
+    pub fn tracks<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, TracksEndpoint> {
+        self.builder(TracksEndpoint {
+            ids: query_list(ids),
+            market: None,
+        })
+    }
 }
 
 impl<F: AuthFlow + Authorised> Client<Token, F> {
@@ -529,6 +543,10 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
 
     pub fn saved_shows(&mut self) -> Builder<'_, F, SavedShowsEndpoint> {
         self.builder(SavedShowsEndpoint::default())
+    }
+
+    pub fn saved_tracks(&mut self) -> Builder<'_, F, SavedTracksEndpoint> {
+        self.builder(SavedTracksEndpoint::default())
     }
 }
 

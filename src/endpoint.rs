@@ -12,6 +12,7 @@ pub mod category;
 pub mod playlist;
 pub mod search;
 pub mod show;
+pub mod track;
 
 pub trait Endpoint: Serialize {}
 

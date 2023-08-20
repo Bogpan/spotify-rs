@@ -57,7 +57,7 @@ pub struct SimplifiedTrack {
 #[derive(Clone, Debug, Deserialize)]
 pub struct SavedTrack {
     pub added_at: DateTime<Utc>,
-    pub track: Vec<Track>,
+    pub track: Track,
 }
 
 #[derive(Clone, Debug, Deserialize)]

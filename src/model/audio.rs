@@ -26,6 +26,11 @@ pub struct AudioFeatures {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub(crate) struct AudioFeaturesResult {
+    pub(crate) audio_features: Vec<AudioFeatures>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct AudioAnalysis {
     pub meta: Meta,
     pub track: TrackAnalysis,

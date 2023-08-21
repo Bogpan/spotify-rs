@@ -35,8 +35,7 @@ pub(crate) struct Tracks {
 #[derive(Clone, Debug, Deserialize)]
 pub struct SimplifiedTrack {
     pub artists: Vec<SimplifiedArtist>,
-    #[serde(default)]
-    pub available_markets: Vec<String>,
+    pub available_markets: Option<Vec<String>>,
     pub disc_number: u32,
     pub duration_ms: u32,
     pub explicit: bool,

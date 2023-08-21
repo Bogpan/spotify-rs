@@ -23,7 +23,7 @@ impl Endpoint for AddPlaylistItemsEndpoint {}
 impl Endpoint for RemovePlaylistItemsEndpoint {}
 impl Endpoint for CurrentUserPlaylistsEndpoint {}
 impl Endpoint for UserPlaylistsEndpoint {}
-impl Endpoint for CreatePlaylistEndpoint {}
+impl Endpoint for CreatePlaylistEndpoint<'_> {}
 impl Endpoint for FeaturedPlaylistsEndpoint {}
 impl Endpoint for CategoryPlaylistsEndpoint {}
 
@@ -103,7 +103,6 @@ pub struct PlaylistItemsEndpoint {
     #[serde(skip)]
     pub(crate) id: String,
     pub(crate) market: Option<String>,
-    pub(crate) fields: Option<String>,
     pub(crate) limit: Option<Limit>,
     pub(crate) offset: Option<u32>,
 }
@@ -111,11 +110,6 @@ pub struct PlaylistItemsEndpoint {
 impl<F: AuthFlow> Builder<'_, F, PlaylistItemsEndpoint> {
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
-        self
-    }
-
-    pub fn fields(mut self, fields: &str) -> Self {
-        self.endpoint.fields = Some(fields.to_owned());
         self
     }
 
@@ -285,18 +279,19 @@ impl<F: AuthFlow> Builder<'_, F, UserPlaylistsEndpoint> {
     }
 }
 
-// TODO Add an optional `tracks` parameter to add tracks (two API requests)
 #[derive(Clone, Debug, Default, Serialize)]
-pub struct CreatePlaylistEndpoint {
+pub struct CreatePlaylistEndpoint<'a> {
     #[serde(skip)]
     pub(crate) user_id: String,
+    #[serde(skip)]
+    pub(crate) tracks: Option<&'a [&'a str]>,
     pub(crate) name: String,
     pub(crate) public: Option<bool>,
     pub(crate) collaborative: Option<bool>,
     pub(crate) description: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, CreatePlaylistEndpoint> {
+impl<'a, F: AuthFlow> Builder<'_, F, CreatePlaylistEndpoint<'a>> {
     pub fn public(mut self, public: bool) -> Self {
         self.endpoint.public = Some(public);
         self
@@ -312,13 +307,33 @@ impl<F: AuthFlow> Builder<'_, F, CreatePlaylistEndpoint> {
         self
     }
 
+    pub fn tracks(mut self, track_uris: &'a [&str]) -> Self {
+        self.endpoint.tracks = Some(track_uris);
+        self
+    }
+
     pub async fn create(self) -> Result<Playlist> {
-        self.spotify
+        let tracks = self.endpoint.tracks;
+
+        let mut playlist: Playlist = self
+            .spotify
             .post(
                 format!("/users/{}/playlists", self.endpoint.user_id),
                 self.endpoint.json(),
             )
-            .await
+            .await?;
+
+        if let Some(tracks) = tracks {
+            self.spotify
+                .add_items_to_playlist(&playlist.id, tracks)
+                .add()
+                .await?;
+
+            let tracks = self.spotify.playlist_items(&playlist.id).get().await?;
+            playlist.tracks = tracks;
+        }
+
+        Ok(playlist)
     }
 }
 

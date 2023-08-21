@@ -45,6 +45,4 @@ impl<F: AuthFlow> Builder<'_, F, SearchEndpoint> {
     pub async fn get(self) -> Result<SearchResults> {
         self.spotify.get("/search".to_owned(), self.endpoint).await
     }
-
-    // TODO do shit; maybe make `include_external` take no arguments? So if you call it, it sets it to true?
 }

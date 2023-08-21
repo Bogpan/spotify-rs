@@ -35,17 +35,15 @@ pub struct Builder<'s, F: AuthFlow, E: Endpoint> {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct BoundedU32<const MIN: u32, const MAX: u32>(u32);
+pub(crate) struct Limit<const MIN: u32 = 1, const MAX: u32 = 50>(u32);
 
-impl<const MIN: u32, const MAX: u32> BoundedU32<MIN, MAX> {
+impl<const MIN: u32, const MAX: u32> Limit<MIN, MAX> {
     pub(crate) fn new(n: u32) -> Self {
         Self(n.clamp(MIN, MAX))
     }
 }
 
-pub(crate) type Limit = BoundedU32<1, 50>;
-
-impl<const MIN: u32, const MAX: u32> Serialize for BoundedU32<MIN, MAX> {
+impl<const MIN: u32, const MAX: u32> Serialize for Limit<MIN, MAX> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,

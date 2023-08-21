@@ -9,6 +9,7 @@ pub struct Recommendations {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RecommendationSeed {
     pub after_filtering_size: u32,
     pub after_relinking_size: u32,

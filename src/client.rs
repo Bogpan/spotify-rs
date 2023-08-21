@@ -41,7 +41,10 @@ use crate::{
             EpisodeEndpoint, EpisodesEndpoint, SavedEpisodesEndpoint, SavedShowsEndpoint,
             ShowEndpoint, ShowEpisodesEndpoint, ShowsEndpoint,
         },
-        track::{SavedTracksEndpoint, TrackEndpoint, TracksEndpoint},
+        track::{
+            Feature, RecommendationsEndpoint, SavedTracksEndpoint, Seed, SeedArtists, SeedType,
+            TrackEndpoint, TracksEndpoint,
+        },
         user::{
             FollowPlaylistBuilder, FollowUserOrArtistEndpoint, FollowedArtistsBuilder,
             UserTopItemsEndpoint,
@@ -51,6 +54,7 @@ use crate::{
     error::{Error, SpotifyError},
     model::{
         artist::{Artist, Artists},
+        audio::{AudioAnalysis, AudioFeatures, AudioFeaturesResult},
         market::Markets,
         recommendation::Genres,
         search::Item,
@@ -208,10 +212,6 @@ impl<F: AuthFlow> Client<Token, F> {
             // No other endpoints so far behave this way.
             req = req.header(CONTENT_LENGTH, 0);
         }
-
-        // let req = req.build().unwrap();
-        // dbg!(req.headers());
-        // return Err(Error::NotAuthenticated);
 
         let res = req.send().await?;
 
@@ -534,16 +534,56 @@ impl<F: AuthFlow> Client<Token, F> {
         self.get::<(), _>(format!("/users/{id}"), None).await
     }
 
-    pub async fn check_if_users_follow_playlist(
+    pub async fn check_if_users_follow_playlist<T: AsRef<str>>(
         &mut self,
         playlist_id: &str,
-        user_ids: &[&str],
+        user_ids: &[&T],
     ) -> Result<Vec<bool>> {
         self.get(
             format!("/playlists/{playlist_id}/followers/contains"),
             [("ids", query_list(user_ids))],
         )
         .await
+    }
+
+    pub async fn get_track_audio_features(&mut self, id: &str) -> Result<AudioFeatures> {
+        self.get::<(), _>(format!("/audio-features/{id}"), None)
+            .await
+    }
+
+    pub async fn get_tracks_audio_features<T: AsRef<str>>(
+        &mut self,
+        ids: &[T],
+    ) -> Result<Vec<AudioFeatures>> {
+        self.get("/audio-features".to_owned(), [("ids", query_list(ids))])
+            .await
+            .map(|a: AudioFeaturesResult| a.audio_features)
+    }
+
+    pub async fn get_track_audio_analysis(&mut self, id: &str) -> Result<AudioAnalysis> {
+        self.get::<(), _>(format!("/audio-analysis/{id}"), None)
+            .await
+    }
+
+    pub fn recommendations<S: SeedType, T: AsRef<str>>(
+        &mut self,
+        seed: Seed<T, S>,
+    ) -> Builder<'_, F, RecommendationsEndpoint<S>> {
+        let (seed_artists, seed_genres, seed_tracks) = match seed {
+            Seed::Artists(ids, _) => (Some(query_list(ids)), None, None),
+            Seed::Genres(genres, _) => (None, Some(query_list(genres)), None),
+            Seed::Tracks(ids, _) => (None, None, Some(query_list(ids))),
+        };
+
+        self.builder(RecommendationsEndpoint {
+            seed_artists,
+            seed_genres,
+            seed_tracks,
+            limit: None,
+            market: None,
+            features: None,
+            marker: PhantomData,
+        })
     }
 }
 

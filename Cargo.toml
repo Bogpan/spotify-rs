@@ -1,6 +1,6 @@
 [package]
 name = "spotify-rs"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2021"
 description = "A Rust wrapper for the Spotify API."
 readme = "README.md"

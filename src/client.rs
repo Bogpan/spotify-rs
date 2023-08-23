@@ -12,7 +12,7 @@ use oauth2::{
 };
 use reqwest::{header::CONTENT_LENGTH, Method};
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::json;
+use serde_json::{de::Read, json};
 
 use crate::{
     auth::{
@@ -30,6 +30,11 @@ use crate::{
             ChaptersEndpoint, SavedAudiobooksEndpoint,
         },
         category::{BrowseCategoriesEndpoint, BrowseCategoryEndpoint},
+        player::{
+            AddItemToQueueEndpoint, RecentlyPlayedTracksEndpoint, RepeatMode,
+            SeekToPositionEndpoint, SetPlaybackVolumeEndpoint, SetRepeatModeEndpoint,
+            StartPlaybackEndpoint, ToggleShuffleEndpoint, TransferPlaybackEndpoint,
+        },
         playlist::{
             AddPlaylistItemsEndpoint, CategoryPlaylistsEndpoint, ChangePlaylistDetailsEndpoint,
             CreatePlaylistEndpoint, CurrentUserPlaylistsEndpoint, FeaturedPlaylistsEndpoint,
@@ -56,6 +61,7 @@ use crate::{
         artist::{Artist, Artists},
         audio::{AudioAnalysis, AudioFeatures, AudioFeaturesResult},
         market::Markets,
+        player::{Device, Devices, PlaybackState, Queue},
         recommendation::Genres,
         search::Item,
         user::{User, UserItemType},
@@ -181,8 +187,8 @@ impl<F: AuthFlow> Client<Token, F> {
         &mut self,
         method: Method,
         endpoint: String,
-        query: impl Into<Option<P>>,
-        body: impl Into<Option<Body<P>>>,
+        query: Option<P>,
+        body: Option<Body<P>>,
     ) -> Result<T> {
         if self.auth.is_expired() {
             if self.auto_refresh {
@@ -197,11 +203,11 @@ impl<F: AuthFlow> Client<Token, F> {
             .request(method, format!("https://api.spotify.com/v1{endpoint}"))
             .bearer_auth(self.auth.access_token.secret());
 
-        if let Some(q) = query.into() {
+        if let Some(q) = query {
             req = req.query(&q);
         }
 
-        if let Some(b) = body.into() {
+        if let Some(b) = body {
             match b {
                 Body::Json(j) => req = req.json(&j),
                 Body::File(f) => req = req.body(f),
@@ -227,7 +233,8 @@ impl<F: AuthFlow> Client<Token, F> {
         endpoint: String,
         query: impl Into<Option<P>>,
     ) -> Result<T> {
-        self.request(Method::GET, endpoint, query, None).await
+        self.request(Method::GET, endpoint, query.into(), None)
+            .await
     }
 
     pub(crate) async fn post<P: Serialize, T: DeserializeOwned>(
@@ -235,7 +242,8 @@ impl<F: AuthFlow> Client<Token, F> {
         endpoint: String,
         body: impl Into<Option<Body<P>>>,
     ) -> Result<T> {
-        self.request(Method::POST, endpoint, None, body).await
+        self.request(Method::POST, endpoint, None, body.into())
+            .await
     }
 
     pub(crate) async fn put<P: Serialize, T: DeserializeOwned>(
@@ -243,7 +251,7 @@ impl<F: AuthFlow> Client<Token, F> {
         endpoint: String,
         body: impl Into<Option<Body<P>>>,
     ) -> Result<T> {
-        self.request(Method::PUT, endpoint, None, body).await
+        self.request(Method::PUT, endpoint, None, body.into()).await
     }
 
     pub(crate) async fn delete<P: Serialize, T: DeserializeOwned>(
@@ -251,7 +259,8 @@ impl<F: AuthFlow> Client<Token, F> {
         endpoint: String,
         body: impl Into<Option<Body<P>>>,
     ) -> Result<T> {
-        self.request(Method::DELETE, endpoint, None, body).await
+        self.request(Method::DELETE, endpoint, None, body.into())
+            .await
     }
 
     fn builder<E: Endpoint>(&mut self, endpoint: E) -> Builder<'_, F, E> {
@@ -534,10 +543,10 @@ impl<F: AuthFlow> Client<Token, F> {
         self.get::<(), _>(format!("/users/{id}"), None).await
     }
 
-    pub async fn check_if_users_follow_playlist<T: AsRef<str>>(
+    pub async fn check_if_users_follow_playlist(
         &mut self,
         playlist_id: &str,
-        user_ids: &[&T],
+        user_ids: &[&str],
     ) -> Result<Vec<bool>> {
         self.get(
             format!("/playlists/{playlist_id}/followers/contains"),
@@ -657,6 +666,118 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         self.builder(FollowUserOrArtistEndpoint {
             r#type: "user".to_owned(),
             ids: ids.iter().map(|i| i.to_string()).collect(),
+        })
+    }
+
+    pub async fn get_playback_state(&mut self, market: Option<&str>) -> Result<PlaybackState> {
+        let market = market.map(|m| [("market", m)]);
+        self.get::<[(&str, &str); 1], _>("/me/player".to_owned(), market)
+            .await
+    }
+
+    pub fn transfer_playback(
+        &mut self,
+        device_id: &str,
+    ) -> Builder<'_, F, TransferPlaybackEndpoint> {
+        self.builder(TransferPlaybackEndpoint {
+            device_ids: vec![device_id.to_owned()],
+            play: None,
+        })
+    }
+
+    pub async fn get_available_devices(&mut self) -> Result<Vec<Device>> {
+        self.get::<(), _>("/me/player/devices".to_owned(), None)
+            .await
+            .map(|d: Devices| d.devices)
+    }
+
+    pub async fn get_currently_playing_track(
+        &mut self,
+        market: Option<&str>,
+    ) -> Result<PlaybackState> {
+        let market = market.map(|m| [("market", m)]);
+        self.get::<Option<[(&str, &str); 1]>, _>("/me/player/currently-playing".to_owned(), market)
+            .await
+    }
+
+    pub fn start_playback(&mut self) -> Builder<'_, F, StartPlaybackEndpoint> {
+        self.builder(StartPlaybackEndpoint::default())
+    }
+
+    pub async fn pause_playback(&mut self, device_id: Option<&str>) -> Result<Nil> {
+        let device_id = device_id.map(|d| [("device_id", d)]);
+        self.request(Method::PUT, "/me/player/pause".to_owned(), device_id, None)
+            .await
+    }
+
+    pub async fn skip_to_next(&mut self, device_id: Option<&str>) -> Result<Nil> {
+        let device_id = device_id.map(|d| [("device_id", d)]);
+        self.request(Method::POST, "/me/player/next".to_owned(), device_id, None)
+            .await
+    }
+
+    pub async fn skip_to_previous(&mut self, device_id: Option<&str>) -> Result<Nil> {
+        let device_id = device_id.map(|d| [("device_id", d)]);
+        self.request(
+            Method::POST,
+            "/me/player/previous".to_owned(),
+            device_id,
+            None,
+        )
+        .await
+    }
+
+    pub fn seek_to_position(&mut self, position: u32) -> Builder<'_, F, SeekToPositionEndpoint> {
+        self.builder(SeekToPositionEndpoint {
+            position_ms: position,
+            device_id: None,
+        })
+    }
+
+    /// *Note: This endpoint seems to be broken, returning 403 Forbidden "Player command failed: Restriction violated"*
+    pub fn set_repeat_mode(
+        &mut self,
+        repeat_mode: RepeatMode,
+    ) -> Builder<'_, F, SetRepeatModeEndpoint> {
+        self.builder(SetRepeatModeEndpoint {
+            state: repeat_mode,
+            device_id: None,
+        })
+    }
+
+    pub fn set_playback_volume(
+        &mut self,
+        volume: u32,
+    ) -> Builder<'_, F, SetPlaybackVolumeEndpoint> {
+        self.builder(SetPlaybackVolumeEndpoint {
+            volume_percent: volume,
+            device_id: None,
+        })
+    }
+
+    /// *Note: This endpoint seems to be broken, returning 403 Forbidden "Player command failed: Restriction violated"*
+    pub fn toggle_playback_shuffle(
+        &mut self,
+        shuffle: bool,
+    ) -> Builder<'_, F, ToggleShuffleEndpoint> {
+        self.builder(ToggleShuffleEndpoint {
+            state: shuffle,
+            device_id: None,
+        })
+    }
+
+    pub fn recently_played_tracks(&mut self) -> Builder<'_, F, RecentlyPlayedTracksEndpoint> {
+        self.builder(RecentlyPlayedTracksEndpoint::default())
+    }
+
+    pub async fn get_user_queue(&mut self) -> Result<Queue> {
+        self.get::<(), _>("/me/player/queue".to_owned(), None).await
+    }
+
+    pub fn add_item_to_queue(&mut self, uri: &str) -> Builder<'_, F, AddItemToQueueEndpoint> {
+        self.builder(AddItemToQueueEndpoint {
+            uri: uri.to_owned(),
+            device_id: None,
         })
     }
 }

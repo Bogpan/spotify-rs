@@ -1,9 +1,10 @@
+[![crates.io](https://img.shields.io/crates/v/spotify-rs)](https://crates.io/crates/spotify-rs)
+[![docs.rs](https://img.shields.io/docsrs/spotify-rs)](https://docs.rs/spotify-rs)
+
 # spotify-rs
-spotify-rs is a Rust wrapper for the Spotify API.
+spotify-rs is a Rust wrapper for the Spotify API. It has full API coverage and supports all the authorisation flows (except for the implicit grant).
 
-Currently, only the player endpoints are missing.
-
-Documentation will be added once full API coverage is achieved (not much left!).
+Documentation is the a priority and will be added in the near future, after polishing up some things.
 
 The library is in its infancy and breaking changes will occur.
 Any feedback is appreciated.

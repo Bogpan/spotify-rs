@@ -4,7 +4,7 @@
 # spotify-rs
 spotify-rs is a Rust wrapper for the Spotify API. It has full API coverage and supports all the authorisation flows (except for the implicit grant).
 
-Documentation is the a priority and will be added in the near future, after polishing up some things.
+Documentation is a top priority and will be added in the near future, after polishing up some things.
 
 The library is in its infancy and breaking changes will occur.
 Any feedback is appreciated.

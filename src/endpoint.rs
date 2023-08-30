@@ -29,6 +29,7 @@ pub(crate) trait PrivateEndpoint: Serialize {
 
 impl<T: Endpoint> PrivateEndpoint for T {}
 
+/// Builder for methods that get information from the API.
 pub struct Builder<'s, F: AuthFlow, E: Endpoint> {
     pub(crate) spotify: &'s mut Client<Token, F>,
     pub(crate) endpoint: E,

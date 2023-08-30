@@ -57,6 +57,7 @@ use crate::{
         },
         Builder, Endpoint,
     },
+    error::Result,
     error::{Error, SpotifyError},
     model::{
         artist::{Artist, Artists},
@@ -68,7 +69,7 @@ use crate::{
         user::{User, UserItemType},
         Image,
     },
-    query_list, Nil, Result,
+    query_list, Nil,
 };
 
 pub(crate) type OAuthClient = oauth2::Client<
@@ -86,8 +87,13 @@ pub(crate) enum Body<P: Serialize = ()> {
     File(Vec<u8>),
 }
 
+/// The client which handles the authentcation and all the Spotify API requests.
 #[derive(Debug)]
 pub struct Client<A: AuthenticationState, F: AuthFlow> {
+    /// Dictates whether or not the client will request a new token when the
+    /// current one is about the expire.
+    ///
+    /// It will check if the token has expired in every request.
     pub auto_refresh: bool,
     pub(crate) auth: A,
     pub(crate) oauth: OAuthClient,
@@ -96,6 +102,13 @@ pub struct Client<A: AuthenticationState, F: AuthFlow> {
 }
 
 impl<F: AuthFlow> Client<UnAuthenticated, F> {
+    /// Create a new unauthenticated, unauthorised client.
+    ///
+    /// You have to choose one of the 3 authorisation flows and a redirect URI.
+    ///
+    /// Authentication = "logging in" with the provided credentials; authorisation = getting permission
+    /// from a user to make requests on their behalf.
+    /// You cannot use an unauthenticated client, but you do have access to some methods for an unauthorised client.
     pub fn new(
         auth_flow: F,
         redirect_uri: RedirectUrl,
@@ -120,6 +133,10 @@ impl<F: AuthFlow> Client<UnAuthenticated, F> {
 }
 
 impl<F: AuthFlow> Client<Token, F> {
+    /// Create a new authenticated and authorised client from a refresh token.
+    /// It's still required to specify an auth flow and redirect URI, as well as the scopes you want.
+    ///
+    /// This method will fail if the refresh token is invalid or a new one cannot be obtained.
     pub async fn from_refresh_token<I>(
         auth_flow: F,
         redirect_uri: RedirectUrl,
@@ -148,7 +165,7 @@ impl<F: AuthFlow> Client<Token, F> {
             .await?
             .set_timestamps();
 
-        Ok(Client {
+        Result::Ok(Client {
             auto_refresh,
             auth: token,
             oauth: oauth_client,
@@ -157,10 +174,13 @@ impl<F: AuthFlow> Client<Token, F> {
         })
     }
 
+    /// Get the current access token.
     pub fn access_token(&self) -> &str {
         self.auth.access_token.secret()
     }
 
+    /// Get the current refresh token. Some auth flows may not provide a refresh token,
+    /// in which case it's `None`.
     pub fn refresh_token(&self) -> Option<&str> {
         self.auth
             .refresh_token
@@ -168,6 +188,8 @@ impl<F: AuthFlow> Client<Token, F> {
             .map(|t| t.secret().as_str())
     }
 
+    /// Request a new refresh token that is automatically updated for the client.
+    /// Only some auth flows allow for token refreshing.
     pub async fn request_refresh_token(&mut self) -> Result<()> {
         let Some(refresh_token) = &self.auth.refresh_token else {
             return Err(Error::RefreshUnavailable);
@@ -871,6 +893,13 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
 }
 
 impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
+    /// Get the authorisation URL and verification tokens, which are used internally
+    /// to protect against CSRF attacks and the likes.
+    ///
+    /// You must redirect the user to the received URL, which in turn redirects them to
+    /// the redirect URI you provided, along with a `code` and `state` parameter in the URl.
+    ///
+    /// They are required for the next step in the auth process.
     pub fn get_authorisation<I>(&self, scopes: I) -> AuthorisationPKCE
     where
         I: IntoIterator,
@@ -892,6 +921,10 @@ impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
         }
     }
 
+    /// This will exchange the `auth_code` for a token which will allow the client
+    /// to make requests.
+    ///
+    /// `csrf_state` is used for CSRF protection.
     pub async fn authenticate(
         self,
         auth: AuthorisationPKCE,
@@ -910,7 +943,7 @@ impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
             .await?
             .set_timestamps();
 
-        Ok(Client {
+        Result::Ok(Client {
             auto_refresh: self.auto_refresh,
             auth: token,
             oauth: self.oauth,
@@ -921,6 +954,13 @@ impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
 }
 
 impl Client<UnAuthenticated, AuthCodeGrantFlow> {
+    /// Get the authorisation URL and verification tokens, which are used internally
+    /// to protect against CSRF attacks and the likes.
+    ///
+    /// You must redirect the user to the received URL, which in turn redirects them to
+    /// the redirect URI you provided, along with a `code` and `state` parameter in the URl.
+    ///
+    /// They are required for the next step in the auth process.
     pub fn get_authorisation<I>(&self, scopes: I) -> Authorisation
     where
         I: IntoIterator,
@@ -938,6 +978,10 @@ impl Client<UnAuthenticated, AuthCodeGrantFlow> {
         }
     }
 
+    /// This will exchange the `auth_code` for a token which will allow the client
+    /// to make requests.
+    ///
+    /// `csrf_state` is used for CSRF protection.
     pub async fn authenticate(
         self,
         auth: Authorisation,
@@ -955,7 +999,7 @@ impl Client<UnAuthenticated, AuthCodeGrantFlow> {
             .await?
             .set_timestamps();
 
-        Ok(Client {
+        Result::Ok(Client {
             auto_refresh: self.auto_refresh,
             auth: token,
             oauth: self.oauth,
@@ -966,6 +1010,11 @@ impl Client<UnAuthenticated, AuthCodeGrantFlow> {
 }
 
 impl Client<UnAuthenticated, ClientCredsGrantFlow> {
+    /// This will exchange the client credentials for an access token used
+    /// to make requests.
+    ///
+    /// This authentication method doesn't allow for token refreshing or to access
+    /// user resources.
     pub async fn authenticate<I>(self, scopes: I) -> Result<Client<Token, ClientCredsGrantFlow>>
     where
         I: IntoIterator,
@@ -978,7 +1027,7 @@ impl Client<UnAuthenticated, ClientCredsGrantFlow> {
             .request_async(async_http_client)
             .await?;
 
-        Ok(Client {
+        Result::Ok(Client {
             auto_refresh: self.auto_refresh,
             auth: token,
             oauth: self.oauth,

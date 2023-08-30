@@ -2,6 +2,7 @@ use serde::Serialize;
 
 use crate::{
     auth::AuthFlow,
+    error::Result,
     model::{
         show::{
             Episode, Episodes, SavedEpisode, SavedShow, Show, Shows, SimplifiedEpisode,
@@ -9,7 +10,6 @@ use crate::{
         },
         Page,
     },
-    Result,
 };
 
 use super::{Builder, Endpoint, Limit};
@@ -30,11 +30,13 @@ pub struct ShowEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, ShowEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Show> {
         self.spotify
             .get(format!("/shows/{}", self.endpoint.id), self.endpoint)
@@ -49,11 +51,13 @@ pub struct ShowsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, ShowsEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Vec<SimplifiedShow>> {
         self.spotify
             .get("/shows/".to_owned(), self.endpoint)
@@ -72,21 +76,25 @@ pub struct ShowEpisodesEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, ShowEpisodesEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SimplifiedEpisode>> {
         self.spotify
             .get(
@@ -104,16 +112,19 @@ pub struct SavedShowsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, SavedShowsEndpoint> {
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SavedShow>> {
         self.spotify
             .get("/me/shows".to_owned(), self.endpoint)
@@ -129,11 +140,13 @@ pub struct EpisodeEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, EpisodeEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Episode> {
         self.spotify
             .get(format!("/episodes/{}", self.endpoint.id), self.endpoint)
@@ -148,11 +161,13 @@ pub struct EpisodesEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, EpisodesEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Vec<Episode>> {
         self.spotify
             .get("/episodes/".to_owned(), self.endpoint)
@@ -169,21 +184,25 @@ pub struct SavedEpisodesEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, SavedEpisodesEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SavedEpisode>> {
         self.spotify
             .get("/me/episodes".to_owned(), self.endpoint)

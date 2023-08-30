@@ -2,12 +2,12 @@ use serde::Serialize;
 
 use crate::{
     auth::AuthFlow,
+    error::Result,
     model::{
         album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
         track::SimplifiedTrack,
         Page,
     },
-    Result,
 };
 
 use super::{Builder, Endpoint, Limit};
@@ -18,6 +18,7 @@ impl Endpoint for AlbumTracksEndpoint {}
 impl Endpoint for SavedAlbumsEndpoint {}
 impl Endpoint for NewReleasesEndpoint {}
 
+/// Endpoint for getting a single album.
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct AlbumEndpoint {
     #[serde(skip)]
@@ -26,11 +27,13 @@ pub struct AlbumEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, AlbumEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Album> {
         self.spotify
             .get(format!("/albums/{}", self.endpoint.id), self.endpoint)
@@ -45,11 +48,13 @@ pub struct AlbumsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, AlbumsEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Vec<Album>> {
         self.spotify
             .get("/albums".to_owned(), self.endpoint)
@@ -68,21 +73,25 @@ pub struct AlbumTracksEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, AlbumTracksEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SimplifiedTrack>> {
         self.spotify
             .get(
@@ -101,21 +110,25 @@ pub struct SavedAlbumsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, SavedAlbumsEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SavedAlbum>> {
         self.spotify
             .get("/me/albums".to_owned(), self.endpoint)
@@ -131,21 +144,25 @@ pub struct NewReleasesEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, NewReleasesEndpoint> {
+    #[doc = include_str!("../docs/country.md")]
     pub fn country(mut self, country: &str) -> Self {
         self.endpoint.country = Some(country.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SimplifiedAlbum>> {
         self.spotify
             .get("/browse/new-releases".to_owned(), self.endpoint)

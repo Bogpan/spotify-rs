@@ -2,13 +2,14 @@ use serde::Serialize;
 
 use crate::{
     auth::AuthFlow,
+    error::Result,
     model::{
         album::{AlbumGroup, SimplifiedAlbum},
         artist::{Artist, Artists},
         track::{Track, Tracks},
         Page,
     },
-    query_list, Result,
+    query_list,
 };
 
 use super::{Builder, Endpoint, Limit};
@@ -43,12 +44,14 @@ impl<'a, F: AuthFlow> Builder<'a, F, ArtistEndpoint> {
         }
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Artist> {
         self.spotify
             .get::<(), _>(format!("/artists/{}", self.endpoint.id), None)
             .await
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get_related_artists(self) -> Result<Vec<Artist>> {
         self.spotify
             .get::<(), _>(
@@ -71,26 +74,31 @@ pub struct ArtistAlbumsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, ArtistAlbumsEndpoint> {
+    /// Sets the album types to be returned. If not supplied all album types will be returned.
     pub fn include_groups(mut self, include_groups: &[AlbumGroup]) -> Self {
         self.endpoint.include_groups = Some(query_list(include_groups));
         self
     }
 
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SimplifiedAlbum>> {
         self.spotify
             .get(
@@ -109,11 +117,13 @@ pub struct ArtistTopTracksEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, ArtistTopTracksEndpoint> {
-    pub fn market(mut self, market: &str) -> Self {
+    #[doc = include_str!("../docs/market.md")]
+    pub fn maket(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Vec<Track>> {
         self.spotify
             .get(

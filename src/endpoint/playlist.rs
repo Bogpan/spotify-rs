@@ -4,13 +4,14 @@ use serde_json::Value;
 
 use crate::{
     auth::AuthFlow,
+    error::Result,
     model::{
         playlist::{
             FeaturedPlaylists, Playlist, PlaylistTrack, Playlists, SimplifiedPlaylist, SnapshotId,
         },
         Page,
     },
-    Nil, Result,
+    Nil,
 };
 
 use super::{Builder, Endpoint, Limit, PrivateEndpoint};
@@ -35,11 +36,13 @@ pub struct PlaylistEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, PlaylistEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Playlist> {
         self.spotify
             .get(format!("/playlists/{}", self.endpoint.id), self.endpoint)
@@ -62,27 +65,34 @@ pub struct ChangePlaylistDetailsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, ChangePlaylistDetailsEndpoint> {
+    /// The new name for the playlist.
     pub fn name(mut self, name: &str) -> Self {
         self.endpoint.name = Some(name.to_owned());
         self
     }
 
+    /// Whether or not to make the playlist public.
     pub fn public(mut self, public: bool) -> Self {
         self.endpoint.public = Some(public);
         self
     }
 
+    /// If true, other users will be able to modify the playlist.
+    ///
+    /// You can only set `collaborative` to `true` on private playlists.
     pub fn collaborative(mut self, collaborative: bool) -> Self {
         self.endpoint.collaborative = Some(collaborative);
         self
     }
 
+    /// The new description for the playlist.
     pub fn description(mut self, description: &str) -> Self {
         self.endpoint.description = Some(description.to_owned());
         self
     }
 
-    pub async fn change(self) -> Result<Nil> {
+    #[doc = include_str!("../docs/send.md")]
+    pub async fn send(self) -> Result<Nil> {
         self.spotify
             .put(
                 format!("/playlists/{}", self.endpoint.id),
@@ -102,21 +112,25 @@ pub struct PlaylistItemsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, PlaylistItemsEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<PlaylistTrack>> {
         self.spotify
             .get(
@@ -142,22 +156,32 @@ pub struct UpdatePlaylistItemsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, UpdatePlaylistItemsEndpoint> {
+    /// The Spotify *URIs* of the items to add (an item can be a track or episode).
     pub fn uris<T: ToString>(mut self, uris: &[T]) -> Self {
         self.endpoint.uris = Some(uris.iter().map(ToString::to_string).collect());
         self
     }
 
+    /// The amount of items to be reordered. Defaults to `1`.
+    ///
+    /// The range of items to be reordered begins from the range_start position,
+    /// and includes the range_length subsequent items.
+    ///
+    /// For example, to move the items at index 9-10 to the start of the playlist,
+    /// `range_start` should be 9 and `range_length` 2.
     pub fn range_length(mut self, range_length: u32) -> Self {
         self.endpoint.range_length = Some(range_length);
         self
     }
 
+    /// The playlist's snapshot ID against which to make changes.
     pub fn snapshot_id(mut self, snapshot_id: &str) -> Self {
         self.endpoint.snapshot_id = Some(snapshot_id.to_owned());
         self
     }
 
-    pub async fn update(self) -> Result<String> {
+    #[doc = include_str!("../docs/send.md")]
+    pub async fn send(self) -> Result<String> {
         self.spotify
             .put(
                 format!("/playlists/{}/tracks", self.endpoint.id),
@@ -178,12 +202,14 @@ pub struct AddPlaylistItemsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, AddPlaylistItemsEndpoint> {
+    /// The position to insert the items at, zero-based. If omitted, items will be appended to the playlist.
     pub fn position(mut self, position: u32) -> Self {
         self.endpoint.position = Some(position);
         self
     }
 
-    pub async fn add(self) -> Result<String> {
+    #[doc = include_str!("../docs/send.md")]
+    pub async fn send(self) -> Result<String> {
         self.spotify
             .post(
                 format!("/playlists/{}/tracks", self.endpoint.id),
@@ -204,12 +230,15 @@ pub struct RemovePlaylistItemsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, RemovePlaylistItemsEndpoint> {
+    /// The playlist's snapshot ID against which to make changes.
     pub fn snapshot_id(mut self, snapshot_id: &str) -> Self {
         self.endpoint.snapshot_id = Some(snapshot_id.to_owned());
         self
     }
 
-    pub async fn remove(self) -> Result<String> {
+    #[doc = include_str!("../docs/send.md")]
+
+    pub async fn send(self) -> Result<String> {
         self.spotify
             .delete(
                 format!("/playlists/{}/tracks", self.endpoint.id),
@@ -227,16 +256,19 @@ pub struct CurrentUserPlaylistsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, CurrentUserPlaylistsEndpoint> {
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SimplifiedPlaylist>> {
         self.spotify
             .get("/me/playlists".to_owned(), self.endpoint)
@@ -253,16 +285,19 @@ pub struct UserPlaylistsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, UserPlaylistsEndpoint> {
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SimplifiedPlaylist>> {
         self.spotify
             .get(
@@ -286,16 +321,22 @@ pub struct CreatePlaylistEndpoint<'a> {
 }
 
 impl<'a, F: AuthFlow> Builder<'_, F, CreatePlaylistEndpoint<'a>> {
+    /// Whether or not to make the playlist public. Defaults to `true`.
     pub fn public(mut self, public: bool) -> Self {
         self.endpoint.public = Some(public);
         self
     }
 
+    /// If true, other users will be able to modify the playlist.
+    ///
+    /// You can only set `collaborative` to `true` on private playlists.
+    /// Defaults to `false`.
     pub fn collaborative(mut self, collaborative: bool) -> Self {
         self.endpoint.collaborative = Some(collaborative);
         self
     }
 
+    /// The description for the new playlist.
     pub fn description(mut self, description: &str) -> Self {
         self.endpoint.description = Some(description.to_owned());
         self
@@ -306,7 +347,8 @@ impl<'a, F: AuthFlow> Builder<'_, F, CreatePlaylistEndpoint<'a>> {
         self
     }
 
-    pub async fn create(self) -> Result<Playlist> {
+    #[doc = include_str!("../docs/send.md")]
+    pub async fn send(self) -> Result<Playlist> {
         let tracks = self.endpoint.tracks;
 
         let mut playlist: Playlist = self
@@ -320,7 +362,7 @@ impl<'a, F: AuthFlow> Builder<'_, F, CreatePlaylistEndpoint<'a>> {
         if let Some(tracks) = tracks {
             self.spotify
                 .add_items_to_playlist(&playlist.id, tracks)
-                .add()
+                .send()
                 .await?;
 
             let tracks = self.spotify.playlist_items(&playlist.id).get().await?;
@@ -341,31 +383,37 @@ pub struct FeaturedPlaylistsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, FeaturedPlaylistsEndpoint> {
+    #[doc = include_str!("../docs/country.md")]
     pub fn country(mut self, country: &str) -> Self {
         self.endpoint.country = Some(country.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/locale.md")]
     pub fn locale(mut self, locale: &str) -> Self {
         self.endpoint.locale = Some(locale.to_owned());
         self
     }
 
+    /// An [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp (`yyyy-MM-ddTHH:mm:ss`)
     pub fn timestamp(mut self, timestamp: DateTime<Utc>) -> Self {
         self.endpoint.timestamp = Some(timestamp.to_rfc3339());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<FeaturedPlaylists> {
         self.spotify
             .get("/browse/featured-playlists".to_owned(), self.endpoint)
@@ -383,21 +431,25 @@ pub struct CategoryPlaylistsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, CategoryPlaylistsEndpoint> {
+    #[doc = include_str!("../docs/country.md")]
     pub fn country(mut self, country: &str) -> Self {
         self.endpoint.country = Some(country.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SimplifiedPlaylist>> {
         self.spotify
             .get(

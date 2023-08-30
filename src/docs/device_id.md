@@ -1,0 +1,1 @@
+The ID of the targeted device. If not supplied, the user's current device will be affected.

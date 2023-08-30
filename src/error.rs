@@ -3,28 +3,40 @@ use oauth2::{basic::BasicErrorResponseType, RequestTokenError, StandardErrorResp
 use serde::Deserialize;
 use thiserror::Error;
 
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// An error returned by the client in a custom [`Result`].
 #[derive(Clone, Debug, Error)]
 pub enum Error {
+    /// Error that occured during authentication.
     #[error("An error occured during authentication: {description}")]
     Authentication { kind: Kind, description: String },
 
+    /// The token has expired and auto-refresh is turned off.
     #[error("The access token has expired and auto-refresh is turned off.")]
     ExpiredToken,
 
+    /// HTTP error returned from the underlying HTTP client.
     #[error("{0}")]
     Http(String),
 
+    /// The (CSRF) state parameter supplied is not the same as the one initially generated and sent to the server.
+    ///
+    /// Learn more about CSRF [here](https://datatracker.ietf.org/doc/html/rfc6749#section-10.12).
     #[error(
-        "The supplied state parameter is not the same as the one sent to the authorisation server. Learn more about CSRF here: https://datatracker.ietf.org/doc/html/rfc6749#section-10.12"
+        "The supplied (CSRF) state parameter is not the same as the one sent to the authorisation server. Learn more about CSRF here: https://datatracker.ietf.org/doc/html/rfc6749#section-10.12"
     )]
     InvalidStateParameter,
 
+    /// The client has not yet been authenticated.
     #[error("The client has not been authenticated.")]
     NotAuthenticated,
 
+    /// The access token has expired and refreshing it is not possible in the current authorisation flow.
     #[error("The access token has has expired and refreshing it is not available in the current authorisation flow.")]
     RefreshUnavailable,
 
+    /// An error returned from Spotify.
     #[error("Error returned from the Spotify API: {status} {message}")]
     Spotify { status: u16, message: String },
 }
@@ -40,11 +52,16 @@ struct Details {
     message: String,
 }
 
+/// The authentication error kind.
 #[derive(Clone, Copy, Debug)]
 pub enum Kind {
+    /// Error response returned by the authorisation server.
     ServerResponse,
+    /// An error occurred while sending the request or receiving the response..
     Request,
+    /// Error parsing the server response.
     Parse,
+    /// Other types of errors (e.g. unexpected server response).
     Unknown,
 }
 

@@ -5,16 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.6] = 2023-08-30
+
+### Added
+
+- Added documentation for everything apart from the model. If anything is missing, please let me know and I'll add it in the future.
 
 ### Changed
 
 - Moved several endpoints (save/remove/check albums/episodes etc.) from needless builders.
+- Re-exported the `error::Result` type alias.
+- In the recently played tracks endpoint, you can now either set `before` or `after`, not both (as per the Spotify API documentation).
+- Renamed several builder methods from various names (e.g. follow, unfollow, set) to, simply, `send`.
 
 ### Removed
 
 - Removed the `fields` option from the get-playlist builder, as it would be used to filter responses, in which case a `Playlist` couldn't be deserialized
 properly. Users can do filtering by accessing specific fields of the `Playlist` struct anyway.
+
 
 ## [0.3.5] - 2023-08-24
 

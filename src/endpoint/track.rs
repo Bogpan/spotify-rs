@@ -5,12 +5,13 @@ use strum::IntoStaticStr;
 
 use crate::{
     auth::AuthFlow,
+    error::Result,
     model::{
         recommendation::Recommendations,
         track::{SavedTrack, Track, Tracks},
         Page,
     },
-    query_list, Result,
+    query_list,
 };
 
 use super::{Builder, Endpoint, Limit};
@@ -111,11 +112,13 @@ pub struct TrackEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, TrackEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Track> {
         self.spotify
             .get(format!("/tracks/{}", self.endpoint.id), self.endpoint)
@@ -129,11 +132,13 @@ pub struct TracksEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, TracksEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Vec<Track>> {
         self.spotify
             .get("/tracks".to_owned(), self.endpoint)
@@ -150,21 +155,25 @@ pub struct SavedTracksEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, SavedTracksEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SavedTrack>> {
         self.spotify
             .get("/me/tracks".to_owned(), self.endpoint)
@@ -189,11 +198,13 @@ pub struct RecommendationsEndpoint<S: SeedType> {
 }
 
 impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedArtists>> {
+    /// Up to 5 Spotify genre IDs used for seeding the recommendations.
     pub fn seed_genres<T: AsRef<str>>(mut self, genres: &[T]) -> Self {
         self.endpoint.seed_genres = Some(query_list(genres));
         self
     }
 
+    /// Up to 5 Spotify track IDs used for seeding the recommendations.
     pub fn seed_tracks<T: AsRef<str>>(mut self, track_ids: &[T]) -> Self {
         self.endpoint.seed_tracks = Some(query_list(track_ids));
         self
@@ -201,11 +212,13 @@ impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedArtists>> {
 }
 
 impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedGenres>> {
+    /// Up to 5 Spotify artist IDs used for seeding the recommendations.
     pub fn seed_artists<T: AsRef<str>>(mut self, artist_ids: &[T]) -> Self {
         self.endpoint.seed_genres = Some(query_list(artist_ids));
         self
     }
 
+    /// Up to 5 Spotify track IDs used for seeding the recommendations.
     pub fn seed_tracks<T: AsRef<str>>(mut self, track_ids: &[T]) -> Self {
         self.endpoint.seed_tracks = Some(query_list(track_ids));
         self
@@ -213,11 +226,13 @@ impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedGenres>> {
 }
 
 impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedTracks>> {
+    /// Up to 5 Spotify genre IDs used for seeding the recommendations.
     pub fn seed_genres<T: AsRef<str>>(mut self, genres: &[T]) -> Self {
         self.endpoint.seed_genres = Some(query_list(genres));
         self
     }
 
+    /// Up to 5 Spotify artist IDs used for seeding the recommendations.
     pub fn seed_artists<T: AsRef<str>>(mut self, artist_ids: &[T]) -> Self {
         self.endpoint.seed_genres = Some(query_list(artist_ids));
         self
@@ -225,16 +240,20 @@ impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedTracks>> {
 }
 
 impl<F: AuthFlow, S: SeedType> Builder<'_, F, RecommendationsEndpoint<S>> {
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    /// A list of [`Feature`]s. Read more about the available features
+    /// [here](https://developer.spotify.com/documentation/web-api/reference/get-recommendations).
     pub fn features(mut self, features: &[Feature]) -> Self {
         let features: HashMap<&'static str, Feature> = features
             .iter()
@@ -245,6 +264,7 @@ impl<F: AuthFlow, S: SeedType> Builder<'_, F, RecommendationsEndpoint<S>> {
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Recommendations> {
         self.spotify
             .get("/recommendations".to_owned(), self.endpoint)

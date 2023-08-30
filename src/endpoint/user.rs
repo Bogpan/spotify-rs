@@ -4,12 +4,13 @@ use serde_json::json;
 use crate::{
     auth::AuthFlow,
     client::Body,
+    error::Result,
     model::{
         artist::{Artist, PagedArtists},
         user::{TimeRange, UserItem, UserItemType},
         CursorPage, Page,
     },
-    query_list, Nil, Result,
+    query_list, Nil,
 };
 
 use super::{Builder, Endpoint, Limit, PrivateEndpoint};
@@ -29,21 +30,25 @@ pub struct UserTopItemsEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, UserTopItemsEndpoint> {
+    /// The time frame of the computed affinities.
     pub fn time_range(mut self, time_range: TimeRange) -> Self {
         self.endpoint.time_range = Some(time_range);
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<UserItem>> {
         self.spotify
             .get(format!("/me/top/{}", self.endpoint.r#type), self.endpoint)
@@ -60,12 +65,15 @@ pub struct FollowPlaylistBuilder {
 }
 
 impl<F: AuthFlow> Builder<'_, F, FollowPlaylistBuilder> {
+    /// If set to `true`, the playlist will be included in the user's
+    /// public playlists. Defaults to `true`.
     pub fn public(mut self, public: bool) -> Self {
         self.endpoint.public = Some(public);
         self
     }
 
-    pub async fn follow(self) -> Result<Nil> {
+    #[doc = include_str!("../docs/send.md")]
+    pub async fn send(self) -> Result<Nil> {
         self.spotify
             .put(
                 format!("/playlists/{}/followers", self.endpoint.id),
@@ -83,16 +91,19 @@ pub struct FollowedArtistsBuilder {
 }
 
 impl<F: AuthFlow> Builder<'_, F, FollowedArtistsBuilder> {
+    /// The last artist ID retrieved from the previous request.
     pub fn after(mut self, artist_id: &str) -> Self {
         self.endpoint.after = Some(artist_id.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<CursorPage<Artist>> {
         self.spotify
             .get("/me/following".to_owned(), self.endpoint)
@@ -109,6 +120,7 @@ pub struct FollowUserOrArtistEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, FollowUserOrArtistEndpoint> {
+    #[doc = include_str!("../docs/send.md")]
     pub async fn follow(self) -> Result<Nil> {
         self.spotify
             .put(
@@ -118,6 +130,7 @@ impl<F: AuthFlow> Builder<'_, F, FollowUserOrArtistEndpoint> {
             .await
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn unfollow(self) -> Result<Nil> {
         self.spotify
             .delete(
@@ -127,6 +140,7 @@ impl<F: AuthFlow> Builder<'_, F, FollowUserOrArtistEndpoint> {
             .await
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn check(self) -> Result<Vec<bool>> {
         self.spotify
             .get(

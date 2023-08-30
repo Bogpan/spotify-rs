@@ -2,13 +2,13 @@ use serde::Serialize;
 
 use crate::{
     auth::AuthFlow,
+    error::Result,
     model::{
         audiobook::{
             Audiobook, Audiobooks, Chapter, Chapters, SimplifiedAudiobook, SimplifiedChapter,
         },
         Page,
     },
-    Result,
 };
 
 use super::{Builder, Endpoint, Limit};
@@ -28,11 +28,13 @@ pub struct AudiobookEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, AudiobookEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Audiobook> {
         self.spotify
             .get(format!("/audiobooks/{}", self.endpoint.id), self.endpoint)
@@ -47,11 +49,13 @@ pub struct AudiobooksEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, AudiobooksEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Vec<Audiobook>> {
         self.spotify
             .get("/audiobooks".to_owned(), self.endpoint)
@@ -70,21 +74,25 @@ pub struct AudiobookChaptersEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, AudiobookChaptersEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SimplifiedChapter>> {
         self.spotify
             .get(
@@ -102,16 +110,19 @@ pub struct SavedAudiobooksEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, SavedAudiobooksEndpoint> {
+    #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
         self
     }
 
+    #[doc = include_str!("../docs/offset.md")]
     pub fn offset(mut self, offset: u32) -> Self {
         self.endpoint.offset = Some(offset);
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Page<SimplifiedAudiobook>> {
         // The map is required because the page's items might contain null (for some reason),
         // so this filters out the nulls.
@@ -138,11 +149,13 @@ pub struct ChapterEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, ChapterEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Chapter> {
         self.spotify
             .get(format!("/chapters/{}", self.endpoint.id), self.endpoint)
@@ -157,11 +170,13 @@ pub struct ChaptersEndpoint {
 }
 
 impl<F: AuthFlow> Builder<'_, F, ChaptersEndpoint> {
+    #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    #[doc = include_str!("../docs/send.md")]
     pub async fn get(self) -> Result<Vec<Chapter>> {
         self.spotify
             .get("/chapters/".to_owned(), self.endpoint)

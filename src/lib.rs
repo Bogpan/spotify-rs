@@ -19,10 +19,9 @@ pub(crate) fn body_list<T: AsRef<str>>(name: &str, list: &[T]) -> Body<Value> {
     Body::Json(json!({ name: list }))
 }
 
-pub type Result<T> = std::result::Result<T, error::Error>;
-
 pub use auth::{AuthCodeGrantFlow, AuthCodeGrantPKCEFlow, ClientCredsGrantFlow};
 pub use client::Client;
+pub use error::{Error, Result};
 pub use oauth2::RedirectUrl;
 use serde_json::{json, Value};
 

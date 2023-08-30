@@ -32,17 +32,11 @@ pub struct PlaylistEndpoint {
     #[serde(skip)]
     pub(crate) id: String,
     pub(crate) market: Option<String>,
-    pub(crate) fields: Option<String>,
 }
 
 impl<F: AuthFlow> Builder<'_, F, PlaylistEndpoint> {
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
-        self
-    }
-
-    pub fn fields(mut self, fields: &str) -> Self {
-        self.endpoint.fields = Some(fields.to_owned());
         self
     }
 

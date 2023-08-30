@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Moved several endpoints (save/remove/check albums/episodes etc.) from needless builders.
+
+### Removed
+
+- Removed the `fields` option from the get-playlist builder, as it would be used to filter responses, in which case a `Playlist` couldn't be deserialized
+properly. Users can do filtering by accessing specific fields of the `Playlist` struct anyway.
+
 ## [0.3.5] - 2023-08-24
 
 ### Added
@@ -20,12 +31,6 @@ It seems to be an issue with the Spotify API again.
 - Implemented the missing track-related endpoints.
 - Added an optional `tracks` method to the builder for creating playlists. It takes a slice of track or episode URIs and makes two additional API calls
 to add tracks to the newly created playlist: one for adding the tracks and one for getting their details.
-
-### Removed
-
-- Removed the `fields` option from the get-playlist builder, as it would be used to filter responses, in which case a `Playlist` couldn't be deserialized
-properly. Users can do filtering by accessing specific fields of the `Playlist` struct anyway.
-
 
 ## [0.3.3] - 2023-08-20
 

@@ -172,24 +172,6 @@ impl<F: AuthFlow> Builder<'_, F, SavedTracksEndpoint> {
             .get("/me/tracks".to_owned(), self.endpoint)
             .await
     }
-
-    pub async fn save<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .put("/me/tracks".to_owned(), Body::Json(json!({ "ids": ids })))
-            .await
-    }
-
-    pub async fn remove<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .delete("/me/tracks".to_owned(), Body::Json(json!({ "ids": ids })))
-            .await
-    }
-
-    pub async fn check<T: AsRef<str>>(self, ids: &[T]) -> Result<Vec<bool>> {
-        self.spotify
-            .get("/me/tracks/contains".to_owned(), [("ids", query_list(ids))])
-            .await
-    }
 }
 
 #[derive(Clone, Debug, Default, Serialize)]

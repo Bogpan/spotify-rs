@@ -12,13 +12,14 @@ use oauth2::{
 };
 use reqwest::{header::CONTENT_LENGTH, Method};
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{de::Read, json};
+use serde_json::json;
 
 use crate::{
     auth::{
         AuthCodeGrantFlow, AuthCodeGrantPKCEFlow, AuthFlow, AuthenticationState, Authorisation,
         AuthorisationPKCE, Authorised, ClientCredsGrantFlow, Scope, Token, UnAuthenticated,
     },
+    body_list,
     endpoint::{
         album::{
             AlbumEndpoint, AlbumTracksEndpoint, AlbumsEndpoint, NewReleasesEndpoint,
@@ -539,22 +540,6 @@ impl<F: AuthFlow> Client<Token, F> {
         })
     }
 
-    pub async fn get_user(&mut self, id: &str) -> Result<User> {
-        self.get::<(), _>(format!("/users/{id}"), None).await
-    }
-
-    pub async fn check_if_users_follow_playlist(
-        &mut self,
-        playlist_id: &str,
-        user_ids: &[&str],
-    ) -> Result<Vec<bool>> {
-        self.get(
-            format!("/playlists/{playlist_id}/followers/contains"),
-            [("ids", query_list(user_ids))],
-        )
-        .await
-    }
-
     pub async fn get_track_audio_features(&mut self, id: &str) -> Result<AudioFeatures> {
         self.get::<(), _>(format!("/audio-features/{id}"), None)
             .await
@@ -594,6 +579,22 @@ impl<F: AuthFlow> Client<Token, F> {
             marker: PhantomData,
         })
     }
+
+    pub async fn get_user(&mut self, id: &str) -> Result<User> {
+        self.get::<(), _>(format!("/users/{id}"), None).await
+    }
+
+    pub async fn check_if_users_follow_playlist<T: AsRef<str>>(
+        &mut self,
+        playlist_id: &str,
+        user_ids: &[T],
+    ) -> Result<Vec<bool>> {
+        self.get(
+            format!("/playlists/{playlist_id}/followers/contains"),
+            [("ids", query_list(user_ids))],
+        )
+        .await
+    }
 }
 
 impl<F: AuthFlow + Authorised> Client<Token, F> {
@@ -601,12 +602,63 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         self.builder(SavedAlbumsEndpoint::default())
     }
 
+    pub async fn save_albums<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.put("/me/albums".to_owned(), body_list("ids", ids))
+            .await
+    }
+
+    pub async fn remove_saved_albums<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.delete("/me/albums".to_owned(), body_list("ids", ids))
+            .await
+    }
+
+    pub async fn check_saved_albums<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Vec<bool>> {
+        self.get("/me/albums/contains".to_owned(), [("ids", query_list(ids))])
+            .await
+    }
+
     pub fn saved_audiobooks(&mut self) -> Builder<'_, F, SavedAudiobooksEndpoint> {
         self.builder(SavedAudiobooksEndpoint::default())
     }
 
+    pub async fn save_audiobooks<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.put::<(), _>(format!("/me/audiobooks?ids={}", query_list(ids)), None)
+            .await
+    }
+
+    pub async fn remove_saved_audiobooks<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.delete::<(), _>(format!("/me/audiobooks?ids={}", query_list(ids)), None)
+            .await
+    }
+
+    pub async fn check_saved_audiobooks<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Vec<bool>> {
+        self.get(
+            "/me/audiobooks/contains".to_owned(),
+            [("ids", query_list(ids))],
+        )
+        .await
+    }
+
     pub fn saved_episodes(&mut self) -> Builder<'_, F, SavedEpisodesEndpoint> {
         self.builder(SavedEpisodesEndpoint::default())
+    }
+
+    pub async fn save_episodes<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.put("/me/episodes".to_owned(), body_list("ids", ids))
+            .await
+    }
+
+    pub async fn remove_saved_episodes<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.delete("/me/episodes".to_owned(), body_list("ids", ids))
+            .await
+    }
+
+    pub async fn check_saved_episodes<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Vec<bool>> {
+        self.get::<(), _>(
+            format!("/me/episodes/contains?ids={}", query_list(ids)),
+            None,
+        )
+        .await
     }
 
     pub fn current_user_playlists(&mut self) -> Builder<'_, F, CurrentUserPlaylistsEndpoint> {
@@ -617,8 +669,38 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         self.builder(SavedShowsEndpoint::default())
     }
 
+    pub async fn save_shows<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.put("/me/shows".to_owned(), body_list("ids", ids))
+            .await
+    }
+
+    pub async fn remove_saved_shows<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.delete("/me/shows".to_owned(), body_list("ids", ids))
+            .await
+    }
+
+    pub async fn check_saved_shows<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Vec<bool>> {
+        self.get("/me/shows/contains".to_owned(), [("ids", query_list(ids))])
+            .await
+    }
+
     pub fn saved_tracks(&mut self) -> Builder<'_, F, SavedTracksEndpoint> {
         self.builder(SavedTracksEndpoint::default())
+    }
+
+    pub async fn save_tracks<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.put("/me/tracks".to_owned(), body_list("ids", ids))
+            .await
+    }
+
+    pub async fn remove_saved_tracks<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Nil> {
+        self.delete("/me/tracks".to_owned(), body_list("ids", ids))
+            .await
+    }
+
+    pub async fn check_saved_tracks<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Vec<bool>> {
+        self.get("/me/tracks/contains".to_owned(), [("ids", query_list(ids))])
+            .await
     }
 
     pub async fn get_current_user_profile(&mut self) -> Result<User> {
@@ -655,17 +737,23 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         })
     }
 
-    pub fn follow_artists(&mut self, ids: &[&str]) -> Builder<'_, F, FollowUserOrArtistEndpoint> {
+    pub fn follow_artists<T: AsRef<str>>(
+        &mut self,
+        ids: &[T],
+    ) -> Builder<'_, F, FollowUserOrArtistEndpoint> {
         self.builder(FollowUserOrArtistEndpoint {
             r#type: "artist".to_owned(),
-            ids: ids.iter().map(|i| i.to_string()).collect(),
+            ids: ids.iter().map(|i| i.as_ref().to_owned()).collect(),
         })
     }
 
-    pub fn follow_users(&mut self, ids: &[&str]) -> Builder<'_, F, FollowUserOrArtistEndpoint> {
+    pub fn follow_users<T: AsRef<str>>(
+        &mut self,
+        ids: &[T],
+    ) -> Builder<'_, F, FollowUserOrArtistEndpoint> {
         self.builder(FollowUserOrArtistEndpoint {
             r#type: "user".to_owned(),
-            ids: ids.iter().map(|i| i.to_string()).collect(),
+            ids: ids.iter().map(|i| i.as_ref().to_owned()).collect(),
         })
     }
 

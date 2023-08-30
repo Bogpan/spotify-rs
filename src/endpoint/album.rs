@@ -1,15 +1,13 @@
 use serde::Serialize;
-use serde_json::json;
 
 use crate::{
     auth::AuthFlow,
-    client::Body,
     model::{
         album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
         track::SimplifiedTrack,
         Page,
     },
-    query_list, Nil, Result,
+    Result,
 };
 
 use super::{Builder, Endpoint, Limit};
@@ -121,24 +119,6 @@ impl<F: AuthFlow> Builder<'_, F, SavedAlbumsEndpoint> {
     pub async fn get(self) -> Result<Page<SavedAlbum>> {
         self.spotify
             .get("/me/albums".to_owned(), self.endpoint)
-            .await
-    }
-
-    pub async fn save<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .put("/me/albums".to_owned(), Body::Json(json!({ "ids": ids })))
-            .await
-    }
-
-    pub async fn remove<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .delete("/me/albums".to_owned(), Body::Json(json!({ "ids": ids })))
-            .await
-    }
-
-    pub async fn check<T: AsRef<str>>(self, ids: &[T]) -> Result<Vec<bool>> {
-        self.spotify
-            .get("/me/albums/contains".to_owned(), [("ids", query_list(ids))])
             .await
     }
 }

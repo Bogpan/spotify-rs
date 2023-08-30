@@ -121,24 +121,6 @@ impl<F: AuthFlow> Builder<'_, F, SavedShowsEndpoint> {
             .get("/me/shows".to_owned(), self.endpoint)
             .await
     }
-
-    pub async fn save<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .put("/me/shows".to_owned(), Body::Json(json!({ "ids": ids })))
-            .await
-    }
-
-    pub async fn remove<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .delete("/me/shows".to_owned(), Body::Json(json!({ "ids": ids })))
-            .await
-    }
-
-    pub async fn check<T: AsRef<str>>(self, ids: &[T]) -> Result<Vec<bool>> {
-        self.spotify
-            .get("/me/shows/contains".to_owned(), [("ids", query_list(ids))])
-            .await
-    }
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -207,30 +189,6 @@ impl<F: AuthFlow> Builder<'_, F, SavedEpisodesEndpoint> {
     pub async fn get(self) -> Result<Page<SavedEpisode>> {
         self.spotify
             .get("/me/episodes".to_owned(), self.endpoint)
-            .await
-    }
-
-    pub async fn save<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .put(
-                "/me/episodes".to_owned(),
-                Body::Json(json!( { "ids": ids })),
-            )
-            .await
-    }
-
-    pub async fn remove<T: Serialize>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .delete("/me/episodes".to_owned(), Body::Json(json!( {"ids": ids })))
-            .await
-    }
-
-    pub async fn check<T: AsRef<str>>(self, ids: &[T]) -> Result<Vec<bool>> {
-        self.spotify
-            .get::<(), _>(
-                format!("/me/episodes/contains?ids={}", query_list(ids)),
-                None,
-            )
             .await
     }
 }

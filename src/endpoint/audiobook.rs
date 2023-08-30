@@ -128,27 +128,6 @@ impl<F: AuthFlow> Builder<'_, F, SavedAudiobooksEndpoint> {
                 items: p.items.into_iter().flatten().collect(),
             })
     }
-
-    pub async fn save<T: AsRef<str>>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .put::<(), _>(format!("/me/audiobooks?ids={}", query_list(ids)), None)
-            .await
-    }
-
-    pub async fn remove<T: AsRef<str>>(self, ids: &[T]) -> Result<Nil> {
-        self.spotify
-            .delete::<(), _>(format!("/me/audiobooks?ids={}", query_list(ids)), None)
-            .await
-    }
-
-    pub async fn check<T: AsRef<str>>(self, ids: &[T]) -> Result<Vec<bool>> {
-        self.spotify
-            .get(
-                "/me/audiobooks/contains".to_owned(),
-                [("ids", query_list(ids))],
-            )
-            .await
-    }
 }
 
 #[derive(Clone, Debug, Default, Serialize)]

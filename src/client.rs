@@ -48,8 +48,8 @@ use crate::{
             ShowEndpoint, ShowEpisodesEndpoint, ShowsEndpoint,
         },
         track::{
-            Feature, RecommendationsEndpoint, SavedTracksEndpoint, Seed, SeedArtists, SeedType,
-            TrackEndpoint, TracksEndpoint,
+            RecommendationsEndpoint, SavedTracksEndpoint, Seed, SeedType, TrackEndpoint,
+            TracksEndpoint,
         },
         user::{
             FollowPlaylistBuilder, FollowUserOrArtistEndpoint, FollowedArtistsBuilder,

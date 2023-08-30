@@ -1,9 +1,7 @@
 use serde::Serialize;
-use serde_json::json;
 
 use crate::{
     auth::AuthFlow,
-    client::Body,
     model::{
         show::{
             Episode, Episodes, SavedEpisode, SavedShow, Show, Shows, SimplifiedEpisode,
@@ -11,7 +9,7 @@ use crate::{
         },
         Page,
     },
-    query_list, Nil, Result,
+    Result,
 };
 
 use super::{Builder, Endpoint, Limit};

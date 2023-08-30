@@ -1,18 +1,16 @@
 use std::{collections::HashMap, marker::PhantomData};
 
 use serde::Serialize;
-use serde_json::json;
 use strum::IntoStaticStr;
 
 use crate::{
     auth::AuthFlow,
-    client::Body,
     model::{
         recommendation::Recommendations,
         track::{SavedTrack, Track, Tracks},
         Page,
     },
-    query_list, Nil, Result,
+    query_list, Result,
 };
 
 use super::{Builder, Endpoint, Limit};

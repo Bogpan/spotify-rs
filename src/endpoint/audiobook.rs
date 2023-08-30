@@ -8,7 +8,7 @@ use crate::{
         },
         Page,
     },
-    query_list, Nil, Result,
+    Result,
 };
 
 use super::{Builder, Endpoint, Limit};

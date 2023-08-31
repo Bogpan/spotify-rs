@@ -2,7 +2,7 @@
 [![docs.rs](https://img.shields.io/docsrs/spotify-rs)](https://docs.rs/spotify-rs)
 
 # spotify-rs
-spotify-rs is a Rust wrapper for the Spotify API. It has full API coverage and supports all the authorisation flows (except for the implicit grant f;ow).
+spotify-rs is a Rust wrapper for the Spotify API. It has full API coverage and supports all the authorisation flows (except for the implicit grant flow).
 
 The library is in its infancy and breaking changes will occur.
 Any feedback is appreciated.

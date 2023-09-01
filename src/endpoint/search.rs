@@ -1,6 +1,10 @@
 use serde::Serialize;
 
-use crate::{auth::AuthFlow, error::Result, model::search::SearchResults};
+use crate::{
+    auth::{AuthFlow, Verifier},
+    error::Result,
+    model::search::SearchResults,
+};
 
 use super::{Builder, Endpoint, Limit};
 
@@ -21,7 +25,7 @@ pub struct SearchEndpoint {
     pub(crate) include_external: Option<bool>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, SearchEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SearchEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());

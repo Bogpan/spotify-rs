@@ -4,7 +4,7 @@ use serde::Serialize;
 use strum::IntoStaticStr;
 
 use crate::{
-    auth::AuthFlow,
+    auth::{AuthFlow, Verifier},
     error::Result,
     model::{
         recommendation::Recommendations,
@@ -111,7 +111,7 @@ pub struct TrackEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, TrackEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, TrackEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -131,7 +131,7 @@ pub struct TracksEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, TracksEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, TracksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -154,7 +154,7 @@ pub struct SavedTracksEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, SavedTracksEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SavedTracksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -188,16 +188,13 @@ pub struct RecommendationsEndpoint<S: SeedType> {
     pub(crate) seed_tracks: Option<String>,
     pub(crate) limit: Option<Limit<1, 100>>,
     pub(crate) market: Option<String>,
-    // pub(crate) features: Option<String>,
     #[serde(flatten)]
     pub(crate) features: Option<HashMap<&'static str, Feature>>,
-    // #[serde(flatten)]
-    // pub(crate) features: Option<Vec<Feature>>,
     #[serde(skip)]
     pub(crate) marker: PhantomData<S>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedArtists>> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, RecommendationsEndpoint<SeedArtists>> {
     /// Up to 5 Spotify genre IDs used for seeding the recommendations.
     pub fn seed_genres<T: AsRef<str>>(mut self, genres: &[T]) -> Self {
         self.endpoint.seed_genres = Some(query_list(genres));
@@ -211,7 +208,7 @@ impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedArtists>> {
     }
 }
 
-impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedGenres>> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, RecommendationsEndpoint<SeedGenres>> {
     /// Up to 5 Spotify artist IDs used for seeding the recommendations.
     pub fn seed_artists<T: AsRef<str>>(mut self, artist_ids: &[T]) -> Self {
         self.endpoint.seed_genres = Some(query_list(artist_ids));
@@ -225,7 +222,7 @@ impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedGenres>> {
     }
 }
 
-impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedTracks>> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, RecommendationsEndpoint<SeedTracks>> {
     /// Up to 5 Spotify genre IDs used for seeding the recommendations.
     pub fn seed_genres<T: AsRef<str>>(mut self, genres: &[T]) -> Self {
         self.endpoint.seed_genres = Some(query_list(genres));
@@ -239,7 +236,7 @@ impl<F: AuthFlow> Builder<'_, F, RecommendationsEndpoint<SeedTracks>> {
     }
 }
 
-impl<F: AuthFlow, S: SeedType> Builder<'_, F, RecommendationsEndpoint<S>> {
+impl<F: AuthFlow, V: Verifier, S: SeedType> Builder<'_, F, V, RecommendationsEndpoint<S>> {
     #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));

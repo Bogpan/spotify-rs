@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::{
-    auth::AuthFlow,
+    auth::{AuthFlow, Verifier},
     error::Result,
     model::{
         playlist::{
@@ -35,7 +35,7 @@ pub struct PlaylistEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, PlaylistEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, PlaylistEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -64,7 +64,7 @@ pub struct ChangePlaylistDetailsEndpoint {
     pub(crate) description: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, ChangePlaylistDetailsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ChangePlaylistDetailsEndpoint> {
     /// The new name for the playlist.
     pub fn name(mut self, name: &str) -> Self {
         self.endpoint.name = Some(name.to_owned());
@@ -111,7 +111,7 @@ pub struct PlaylistItemsEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, PlaylistItemsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, PlaylistItemsEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -155,7 +155,7 @@ pub struct UpdatePlaylistItemsEndpoint {
     pub(crate) snapshot_id: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, UpdatePlaylistItemsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, UpdatePlaylistItemsEndpoint> {
     /// The Spotify *URIs* of the items to add (an item can be a track or episode).
     pub fn uris<T: ToString>(mut self, uris: &[T]) -> Self {
         self.endpoint.uris = Some(uris.iter().map(ToString::to_string).collect());
@@ -201,7 +201,7 @@ pub struct AddPlaylistItemsEndpoint {
     pub(crate) position: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, AddPlaylistItemsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AddPlaylistItemsEndpoint> {
     /// The position to insert the items at, zero-based. If omitted, items will be appended to the playlist.
     pub fn position(mut self, position: u32) -> Self {
         self.endpoint.position = Some(position);
@@ -229,7 +229,7 @@ pub struct RemovePlaylistItemsEndpoint {
     pub(crate) snapshot_id: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, RemovePlaylistItemsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, RemovePlaylistItemsEndpoint> {
     /// The playlist's snapshot ID against which to make changes.
     pub fn snapshot_id(mut self, snapshot_id: &str) -> Self {
         self.endpoint.snapshot_id = Some(snapshot_id.to_owned());
@@ -255,7 +255,7 @@ pub struct CurrentUserPlaylistsEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, CurrentUserPlaylistsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, CurrentUserPlaylistsEndpoint> {
     #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
@@ -284,7 +284,7 @@ pub struct UserPlaylistsEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, UserPlaylistsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, UserPlaylistsEndpoint> {
     #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
@@ -320,7 +320,7 @@ pub struct CreatePlaylistEndpoint<'a> {
     pub(crate) description: Option<String>,
 }
 
-impl<'a, F: AuthFlow> Builder<'_, F, CreatePlaylistEndpoint<'a>> {
+impl<'a, F: AuthFlow, V: Verifier> Builder<'_, F, V, CreatePlaylistEndpoint<'a>> {
     /// Whether or not to make the playlist public. Defaults to `true`.
     pub fn public(mut self, public: bool) -> Self {
         self.endpoint.public = Some(public);
@@ -382,7 +382,7 @@ pub struct FeaturedPlaylistsEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, FeaturedPlaylistsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, FeaturedPlaylistsEndpoint> {
     #[doc = include_str!("../docs/country.md")]
     pub fn country(mut self, country: &str) -> Self {
         self.endpoint.country = Some(country.to_owned());
@@ -430,7 +430,7 @@ pub struct CategoryPlaylistsEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, CategoryPlaylistsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, CategoryPlaylistsEndpoint> {
     #[doc = include_str!("../docs/country.md")]
     pub fn country(mut self, country: &str) -> Self {
         self.endpoint.country = Some(country.to_owned());

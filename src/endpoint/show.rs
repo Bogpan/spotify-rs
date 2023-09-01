@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use crate::{
-    auth::AuthFlow,
+    auth::{AuthFlow, Verifier},
     error::Result,
     model::{
         show::{
@@ -29,7 +29,7 @@ pub struct ShowEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, ShowEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ShowEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -50,15 +50,17 @@ pub struct ShowsEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, ShowsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ShowsEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }
 
+    // This doesn't flatten the result into a Vec<SimplifiedShow> because the user might want to
+    // know that some of the shows they want return null.
     #[doc = include_str!("../docs/send.md")]
-    pub async fn get(self) -> Result<Vec<SimplifiedShow>> {
+    pub async fn get(self) -> Result<Vec<Option<SimplifiedShow>>> {
         self.spotify
             .get("/shows/".to_owned(), self.endpoint)
             .await
@@ -75,7 +77,7 @@ pub struct ShowEpisodesEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, ShowEpisodesEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ShowEpisodesEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -111,7 +113,7 @@ pub struct SavedShowsEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, SavedShowsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SavedShowsEndpoint> {
     #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
@@ -139,7 +141,7 @@ pub struct EpisodeEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, EpisodeEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, EpisodeEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -160,7 +162,7 @@ pub struct EpisodesEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, EpisodesEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, EpisodesEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -183,7 +185,7 @@ pub struct SavedEpisodesEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, SavedEpisodesEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SavedEpisodesEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());

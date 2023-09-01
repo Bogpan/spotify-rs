@@ -56,7 +56,7 @@ pub struct SavedShow {
 
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Shows {
-    pub(crate) shows: Vec<SimplifiedShow>,
+    pub(crate) shows: Vec<Option<SimplifiedShow>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

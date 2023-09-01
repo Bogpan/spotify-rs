@@ -7,17 +7,17 @@ use oauth2::{
         BasicTokenType,
     },
     reqwest::async_http_client,
-    AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, RedirectUrl, RefreshToken,
-    StandardRevocableToken,
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl,
+    RefreshToken, StandardRevocableToken, TokenUrl,
 };
-use reqwest::{header::CONTENT_LENGTH, Method};
+use reqwest::{header::CONTENT_LENGTH, Method, Url};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 
 use crate::{
     auth::{
-        AuthCodeGrantFlow, AuthCodeGrantPKCEFlow, AuthFlow, AuthenticationState, Authorisation,
-        AuthorisationPKCE, Authorised, ClientCredsGrantFlow, Scope, Token, UnAuthenticated,
+        AuthCodeFlow, AuthCodePkceFlow, AuthFlow, AuthenticationState, Authorised, ClientCredsFlow,
+        CsrfVerifier, NoVerifier, PkceVerifier, Token, UnAuthenticated, Verifier,
     },
     body_list,
     endpoint::{
@@ -72,6 +72,9 @@ use crate::{
     query_list, Nil,
 };
 
+const AUTHORISATION_URL: &str = "https://accounts.spotify.com/authorize";
+const TOKEN_URL: &str = "https://accounts.spotify.com/api/token";
+
 pub(crate) type OAuthClient = oauth2::Client<
     BasicErrorResponse,
     Token,
@@ -81,15 +84,27 @@ pub(crate) type OAuthClient = oauth2::Client<
     BasicRevocationErrorResponse,
 >;
 
+/// A client created using the Authorisation Code Flow.
+pub type AuthCodeClient<V = NoVerifier> = Client<UnAuthenticated, AuthCodeFlow, V>;
+
+/// A client created using the Authorisation Code with PKCE Flow.
+pub type AuthCodePkceClient<V = NoVerifier> = Client<UnAuthenticated, AuthCodePkceFlow, V>;
+
+/// A client created using the Client Credentials Flow.
+pub type ClientCredsClient<V = NoVerifier> = Client<UnAuthenticated, ClientCredsFlow, V>;
+
 #[doc(hidden)]
 pub(crate) enum Body<P: Serialize = ()> {
     Json(P),
     File(Vec<u8>),
 }
 
-/// The client which handles the authentcation and all the Spotify API requests.
+/// The client which handles the authentication and all the Spotify API requests.
+///
+/// It is recommended to use one of the following: [`AuthCodeClient`], [`AuthCodePkceClient`] or [`ClientCredsClient`],
+/// depending on the chosen auth flow.
 #[derive(Debug)]
-pub struct Client<A: AuthenticationState, F: AuthFlow> {
+pub struct Client<A: AuthenticationState, F: AuthFlow, V: Verifier> {
     /// Dictates whether or not the client will request a new token when the
     /// current one is about the expire.
     ///
@@ -98,82 +113,137 @@ pub struct Client<A: AuthenticationState, F: AuthFlow> {
     pub(crate) auth: A,
     pub(crate) oauth: OAuthClient,
     pub(crate) http: reqwest::Client,
+    pub(crate) verifier: V,
     marker: PhantomData<F>,
 }
 
-impl<F: AuthFlow> Client<UnAuthenticated, F> {
-    /// Create a new unauthenticated, unauthorised client.
+impl Client<UnAuthenticated, AuthCodeFlow, CsrfVerifier> {
+    /// Create a new client and generate an authorisation URL
     ///
-    /// You have to choose one of the 3 authorisation flows and a redirect URI.
+    /// You must redirect the user to the returned URL, which in turn redirects them to
+    /// the `redirect_uri` you provided, along with a `code` and `state` parameter in the URl.
     ///
-    /// Authentication = "logging in" with the provided credentials; authorisation = getting permission
-    /// from a user to make requests on their behalf.
-    /// You cannot use an unauthenticated client, but you do have access to some methods for an unauthorised client.
+    /// They are required for the next step in the auth process.
     pub fn new(
-        auth_flow: F,
+        AuthCodeFlow {
+            client_id,
+            client_secret,
+            scopes,
+        }: AuthCodeFlow,
         redirect_uri: RedirectUrl,
         auto_refresh: bool,
-    ) -> Client<UnAuthenticated, F> {
-        let oauth_client = OAuthClient::new(
-            auth_flow.client_id(),
-            auth_flow.client_secret(),
-            AuthUrl::new("https://accounts.spotify.com/authorize".to_owned()).unwrap(),
-            auth_flow.token_url(),
+    ) -> (Self, Url) {
+        let oauth = OAuthClient::new(
+            ClientId::new(client_id),
+            Some(ClientSecret::new(client_secret)),
+            AuthUrl::new(AUTHORISATION_URL.to_owned()).unwrap(),
+            Some(TokenUrl::new(TOKEN_URL.to_owned()).unwrap()),
         )
         .set_redirect_uri(redirect_uri);
 
-        Client {
-            auto_refresh,
-            auth: UnAuthenticated,
-            oauth: oauth_client,
-            http: reqwest::Client::new(),
-            marker: PhantomData,
-        }
+        let (auth_url, csrf_token) = oauth
+            .authorize_url(CsrfToken::new_random)
+            .add_scopes(scopes)
+            .url();
+
+        (
+            Client {
+                auto_refresh,
+                auth: UnAuthenticated,
+                oauth,
+                http: reqwest::Client::new(),
+                verifier: CsrfVerifier(csrf_token),
+                marker: PhantomData,
+            },
+            auth_url,
+        )
     }
 }
 
-impl<F: AuthFlow> Client<Token, F> {
-    /// Create a new authenticated and authorised client from a refresh token.
-    /// It's still required to specify an auth flow and redirect URI, as well as the scopes you want.
+impl Client<UnAuthenticated, AuthCodePkceFlow, PkceVerifier> {
+    /// Create a new client and generate an authorisation URL
     ///
-    /// This method will fail if the refresh token is invalid or a new one cannot be obtained.
-    pub async fn from_refresh_token<I>(
-        auth_flow: F,
+    /// You must redirect the user to the received URL, which in turn redirects them to
+    /// the redirect URI you provided, along with a `code` and `state` parameter in the URl.
+    ///
+    /// They are required for the next step in the auth process.
+    pub fn new(
+        AuthCodePkceFlow { client_id, scopes }: AuthCodePkceFlow,
         redirect_uri: RedirectUrl,
         auto_refresh: bool,
-        scopes: I,
-        refresh_token: String,
-    ) -> Result<Client<Token, F>>
-    where
-        I: IntoIterator,
-        I::Item: Into<Scope>,
-    {
-        let oauth_client = OAuthClient::new(
-            auth_flow.client_id(),
-            auth_flow.client_secret(),
-            AuthUrl::new("https://accounts.spotify.com/authorize".to_owned()).unwrap(),
-            auth_flow.token_url(),
+    ) -> (Self, Url) {
+        let oauth = OAuthClient::new(
+            ClientId::new(client_id),
+            None,
+            AuthUrl::new(AUTHORISATION_URL.to_owned()).unwrap(),
+            Some(TokenUrl::new(TOKEN_URL.to_owned()).unwrap()),
         )
         .set_redirect_uri(redirect_uri);
 
+        let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
+
+        let (auth_url, csrf_token) = oauth
+            .authorize_url(CsrfToken::new_random)
+            .add_scopes(scopes)
+            .set_pkce_challenge(pkce_challenge)
+            .url();
+
+        (
+            Client {
+                auto_refresh,
+                auth: UnAuthenticated,
+                oauth,
+                http: reqwest::Client::new(),
+                verifier: PkceVerifier {
+                    csrf_token,
+                    pkce_verifier,
+                },
+                marker: PhantomData,
+            },
+            auth_url,
+        )
+    }
+}
+
+impl<F: AuthFlow> Client<Token, F, NoVerifier> {
+    /// Create a new authenticated and authorised client from a refresh token.
+    /// It's still required to specify an auth flow.
+    ///
+    /// This method will fail if the refresh token is invalid or a new one cannot be obtained.
+    pub async fn from_refresh_token(
+        auth_flow: F,
+        auto_refresh: bool,
+        refresh_token: String,
+    ) -> Result<Client<Token, F, NoVerifier>> {
+        let oauth_client = OAuthClient::new(
+            auth_flow.client_id(),
+            auth_flow.client_secret(),
+            AuthUrl::new(AUTHORISATION_URL.to_owned()).unwrap(),
+            Some(TokenUrl::new(TOKEN_URL.to_owned()).unwrap()),
+        );
+
         let refresh_token = RefreshToken::new(refresh_token);
 
-        let token = oauth_client
-            .exchange_refresh_token(&refresh_token)
-            .add_scopes(scopes.into_iter().map(|i| i.into().0))
-            .request_async(async_http_client)
-            .await?
-            .set_timestamps();
+        let mut req = oauth_client.exchange_refresh_token(&refresh_token);
 
-        Result::Ok(Client {
+        if let Some(scopes) = auth_flow.scopes() {
+            req = req.add_scopes(scopes);
+        }
+
+        let token = req.request_async(async_http_client).await?.set_timestamps();
+
+        Ok(Client {
             auto_refresh,
             auth: token,
             oauth: oauth_client,
             http: reqwest::Client::new(),
+            verifier: NoVerifier,
             marker: PhantomData,
         })
     }
+}
 
+impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
     /// Get the current access token.
     pub fn access_token(&self) -> &str {
         self.auth.access_token.secret()
@@ -188,7 +258,7 @@ impl<F: AuthFlow> Client<Token, F> {
             .map(|t| t.secret().as_str())
     }
 
-    /// Request a new refresh token that is automatically updated for the client.
+    /// Request a new refresh token and updates it in the client.
     /// Only some auth flows allow for token refreshing.
     pub async fn request_refresh_token(&mut self) -> Result<()> {
         let Some(refresh_token) = &self.auth.refresh_token else {
@@ -286,39 +356,39 @@ impl<F: AuthFlow> Client<Token, F> {
             .await
     }
 
-    fn builder<E: Endpoint>(&mut self, endpoint: E) -> Builder<'_, F, E> {
+    fn builder<E: Endpoint>(&mut self, endpoint: E) -> Builder<'_, F, V, E> {
         Builder {
             spotify: self,
             endpoint,
         }
     }
 
-    pub fn album(&mut self, id: &str) -> Builder<'_, F, AlbumEndpoint> {
+    pub fn album(&mut self, id: &str) -> Builder<'_, F, V, AlbumEndpoint> {
         self.builder(AlbumEndpoint {
             id: id.to_owned(),
             market: None,
         })
     }
 
-    pub fn albums<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, AlbumsEndpoint> {
+    pub fn albums<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, V, AlbumsEndpoint> {
         self.builder(AlbumsEndpoint {
             ids: query_list(ids),
             market: None,
         })
     }
 
-    pub fn album_tracks(&mut self, album_id: &str) -> Builder<'_, F, AlbumTracksEndpoint> {
+    pub fn album_tracks(&mut self, album_id: &str) -> Builder<'_, F, V, AlbumTracksEndpoint> {
         self.builder(AlbumTracksEndpoint {
             id: album_id.to_owned(),
             ..Default::default()
         })
     }
 
-    pub fn new_releases(&mut self) -> Builder<'_, F, NewReleasesEndpoint> {
+    pub fn new_releases(&mut self) -> Builder<'_, F, V, NewReleasesEndpoint> {
         self.builder(NewReleasesEndpoint::default())
     }
 
-    pub fn artist(&mut self, id: &str) -> Builder<'_, F, ArtistEndpoint> {
+    pub fn artist(&mut self, id: &str) -> Builder<'_, F, V, ArtistEndpoint> {
         self.builder(ArtistEndpoint { id: id.to_owned() })
     }
 
@@ -328,14 +398,17 @@ impl<F: AuthFlow> Client<Token, F> {
             .map(|a: Artists| a.artists)
     }
 
-    pub fn audiobook(&mut self, id: &str) -> Builder<'_, F, AudiobookEndpoint> {
+    pub fn audiobook(&mut self, id: &str) -> Builder<'_, F, V, AudiobookEndpoint> {
         self.builder(AudiobookEndpoint {
             id: id.to_owned(),
             market: None,
         })
     }
 
-    pub fn audiobooks<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, AudiobooksEndpoint> {
+    pub fn audiobooks<T: AsRef<str>>(
+        &mut self,
+        ids: &[T],
+    ) -> Builder<'_, F, V, AudiobooksEndpoint> {
         self.builder(AudiobooksEndpoint {
             ids: query_list(ids),
             market: None,
@@ -345,26 +418,26 @@ impl<F: AuthFlow> Client<Token, F> {
     pub fn audiobook_chapters(
         &mut self,
         audiobook_id: &str,
-    ) -> Builder<'_, F, AudiobookChaptersEndpoint> {
+    ) -> Builder<'_, F, V, AudiobookChaptersEndpoint> {
         self.builder(AudiobookChaptersEndpoint {
             id: audiobook_id.to_owned(),
             ..Default::default()
         })
     }
 
-    pub fn browse_category(&mut self, id: &str) -> Builder<'_, F, BrowseCategoryEndpoint> {
+    pub fn browse_category(&mut self, id: &str) -> Builder<'_, F, V, BrowseCategoryEndpoint> {
         self.builder(BrowseCategoryEndpoint {
             id: id.to_owned(),
             ..Default::default()
         })
     }
 
-    pub fn browse_categories(&mut self) -> Builder<'_, F, BrowseCategoriesEndpoint> {
+    pub fn browse_categories(&mut self) -> Builder<'_, F, V, BrowseCategoriesEndpoint> {
         self.builder(BrowseCategoriesEndpoint::default())
     }
 
     /// *Note: Spotify's API returns `500 Server error`.*
-    pub fn chapter(&mut self, id: &str) -> Builder<'_, F, ChapterEndpoint> {
+    pub fn chapter(&mut self, id: &str) -> Builder<'_, F, V, ChapterEndpoint> {
         self.builder(ChapterEndpoint {
             id: id.to_owned(),
             market: None,
@@ -372,21 +445,21 @@ impl<F: AuthFlow> Client<Token, F> {
     }
 
     /// *Note: Spotify's API returns `500 Server error`.*
-    pub fn chapters<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, ChaptersEndpoint> {
+    pub fn chapters<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, V, ChaptersEndpoint> {
         self.builder(ChaptersEndpoint {
             ids: query_list(ids),
             market: None,
         })
     }
 
-    pub fn episode(&mut self, id: &str) -> Builder<'_, F, EpisodeEndpoint> {
+    pub fn episode(&mut self, id: &str) -> Builder<'_, F, V, EpisodeEndpoint> {
         self.builder(EpisodeEndpoint {
             id: id.to_owned(),
             market: None,
         })
     }
 
-    pub fn episodes<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, EpisodesEndpoint> {
+    pub fn episodes<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, V, EpisodesEndpoint> {
         self.builder(EpisodesEndpoint {
             ids: query_list(ids),
             market: None,
@@ -405,7 +478,7 @@ impl<F: AuthFlow> Client<Token, F> {
             .map(|m: Markets| m.markets)
     }
 
-    pub fn playlist(&mut self, id: &str) -> Builder<'_, F, PlaylistEndpoint> {
+    pub fn playlist(&mut self, id: &str) -> Builder<'_, F, V, PlaylistEndpoint> {
         self.builder(PlaylistEndpoint {
             id: id.to_owned(),
             ..Default::default()
@@ -415,14 +488,14 @@ impl<F: AuthFlow> Client<Token, F> {
     pub fn change_playlist_details(
         &mut self,
         id: &str,
-    ) -> Builder<'_, F, ChangePlaylistDetailsEndpoint> {
+    ) -> Builder<'_, F, V, ChangePlaylistDetailsEndpoint> {
         self.builder(ChangePlaylistDetailsEndpoint {
             id: id.to_owned(),
             ..Default::default()
         })
     }
 
-    pub fn playlist_items(&mut self, id: &str) -> Builder<'_, F, PlaylistItemsEndpoint> {
+    pub fn playlist_items(&mut self, id: &str) -> Builder<'_, F, V, PlaylistItemsEndpoint> {
         self.builder(PlaylistItemsEndpoint {
             id: id.to_owned(),
             ..Default::default()
@@ -434,7 +507,7 @@ impl<F: AuthFlow> Client<Token, F> {
         id: &str,
         range_start: u32,
         insert_before: u32,
-    ) -> Builder<'_, F, UpdatePlaylistItemsEndpoint> {
+    ) -> Builder<'_, F, V, UpdatePlaylistItemsEndpoint> {
         self.builder(UpdatePlaylistItemsEndpoint {
             id: id.to_owned(),
             range_start,
@@ -447,7 +520,7 @@ impl<F: AuthFlow> Client<Token, F> {
         &mut self,
         id: &str,
         item_uris: &[T],
-    ) -> Builder<'_, F, AddPlaylistItemsEndpoint> {
+    ) -> Builder<'_, F, V, AddPlaylistItemsEndpoint> {
         self.builder(AddPlaylistItemsEndpoint {
             id: id.to_owned(),
             uris: item_uris.iter().map(ToString::to_string).collect(),
@@ -459,7 +532,7 @@ impl<F: AuthFlow> Client<Token, F> {
         &mut self,
         id: &str,
         item_uris: &[T],
-    ) -> Builder<'_, F, RemovePlaylistItemsEndpoint> {
+    ) -> Builder<'_, F, V, RemovePlaylistItemsEndpoint> {
         let tracks = item_uris
             .iter()
             .map(|u| json!({ "uri": u.as_ref() }))
@@ -472,7 +545,7 @@ impl<F: AuthFlow> Client<Token, F> {
         })
     }
 
-    pub fn user_playlists(&mut self, user_id: &str) -> Builder<'_, F, UserPlaylistsEndpoint> {
+    pub fn user_playlists(&mut self, user_id: &str) -> Builder<'_, F, V, UserPlaylistsEndpoint> {
         self.builder(UserPlaylistsEndpoint {
             id: user_id.to_owned(),
             ..Default::default()
@@ -483,7 +556,7 @@ impl<F: AuthFlow> Client<Token, F> {
         &mut self,
         user_id: &str,
         name: &str,
-    ) -> Builder<'_, F, CreatePlaylistEndpoint> {
+    ) -> Builder<'_, F, V, CreatePlaylistEndpoint> {
         self.builder(CreatePlaylistEndpoint {
             user_id: user_id.to_owned(),
             name: name.to_owned(),
@@ -491,14 +564,14 @@ impl<F: AuthFlow> Client<Token, F> {
         })
     }
 
-    pub fn featured_playlists(&mut self) -> Builder<'_, F, FeaturedPlaylistsEndpoint> {
+    pub fn featured_playlists(&mut self) -> Builder<'_, F, V, FeaturedPlaylistsEndpoint> {
         self.builder(FeaturedPlaylistsEndpoint::default())
     }
 
     pub fn category_playlists(
         &mut self,
         category_id: &str,
-    ) -> Builder<'_, F, CategoryPlaylistsEndpoint> {
+    ) -> Builder<'_, F, V, CategoryPlaylistsEndpoint> {
         self.builder(CategoryPlaylistsEndpoint {
             id: category_id.to_owned(),
             ..Default::default()
@@ -517,7 +590,11 @@ impl<F: AuthFlow> Client<Token, F> {
         self.put(format!("/playlists/{id}/images"), body).await
     }
 
-    pub fn search(&mut self, query: &str, item_types: &[Item]) -> Builder<'_, F, SearchEndpoint> {
+    pub fn search(
+        &mut self,
+        query: &str,
+        item_types: &[Item],
+    ) -> Builder<'_, F, V, SearchEndpoint> {
         let r#type = query_list(item_types);
 
         self.builder(SearchEndpoint {
@@ -527,35 +604,35 @@ impl<F: AuthFlow> Client<Token, F> {
         })
     }
 
-    pub fn show(&mut self, id: &str) -> Builder<'_, F, ShowEndpoint> {
+    pub fn show(&mut self, id: &str) -> Builder<'_, F, V, ShowEndpoint> {
         self.builder(ShowEndpoint {
             id: id.to_owned(),
             market: None,
         })
     }
 
-    pub fn shows<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, ShowsEndpoint> {
+    pub fn shows<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, V, ShowsEndpoint> {
         self.builder(ShowsEndpoint {
             ids: query_list(ids),
             market: None,
         })
     }
 
-    pub fn show_episodes(&mut self, show_id: &str) -> Builder<'_, F, ShowEpisodesEndpoint> {
+    pub fn show_episodes(&mut self, show_id: &str) -> Builder<'_, F, V, ShowEpisodesEndpoint> {
         self.builder(ShowEpisodesEndpoint {
             show_id: show_id.to_owned(),
             ..Default::default()
         })
     }
 
-    pub fn track(&mut self, id: &str) -> Builder<'_, F, TrackEndpoint> {
+    pub fn track(&mut self, id: &str) -> Builder<'_, F, V, TrackEndpoint> {
         self.builder(TrackEndpoint {
             id: id.to_owned(),
             market: None,
         })
     }
 
-    pub fn tracks<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, TracksEndpoint> {
+    pub fn tracks<T: AsRef<str>>(&mut self, ids: &[T]) -> Builder<'_, F, V, TracksEndpoint> {
         self.builder(TracksEndpoint {
             ids: query_list(ids),
             market: None,
@@ -584,7 +661,7 @@ impl<F: AuthFlow> Client<Token, F> {
     pub fn recommendations<S: SeedType, T: AsRef<str>>(
         &mut self,
         seed: Seed<T, S>,
-    ) -> Builder<'_, F, RecommendationsEndpoint<S>> {
+    ) -> Builder<'_, F, V, RecommendationsEndpoint<S>> {
         let (seed_artists, seed_genres, seed_tracks) = match seed {
             Seed::Artists(ids, _) => (Some(query_list(ids)), None, None),
             Seed::Genres(genres, _) => (None, Some(query_list(genres)), None),
@@ -619,8 +696,8 @@ impl<F: AuthFlow> Client<Token, F> {
     }
 }
 
-impl<F: AuthFlow + Authorised> Client<Token, F> {
-    pub fn saved_albums(&mut self) -> Builder<'_, F, SavedAlbumsEndpoint> {
+impl<F: AuthFlow + Authorised, V: Verifier> Client<Token, F, V> {
+    pub fn saved_albums(&mut self) -> Builder<'_, F, V, SavedAlbumsEndpoint> {
         self.builder(SavedAlbumsEndpoint::default())
     }
 
@@ -639,7 +716,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
             .await
     }
 
-    pub fn saved_audiobooks(&mut self) -> Builder<'_, F, SavedAudiobooksEndpoint> {
+    pub fn saved_audiobooks(&mut self) -> Builder<'_, F, V, SavedAudiobooksEndpoint> {
         self.builder(SavedAudiobooksEndpoint::default())
     }
 
@@ -661,7 +738,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         .await
     }
 
-    pub fn saved_episodes(&mut self) -> Builder<'_, F, SavedEpisodesEndpoint> {
+    pub fn saved_episodes(&mut self) -> Builder<'_, F, V, SavedEpisodesEndpoint> {
         self.builder(SavedEpisodesEndpoint::default())
     }
 
@@ -683,11 +760,11 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         .await
     }
 
-    pub fn current_user_playlists(&mut self) -> Builder<'_, F, CurrentUserPlaylistsEndpoint> {
+    pub fn current_user_playlists(&mut self) -> Builder<'_, F, V, CurrentUserPlaylistsEndpoint> {
         self.builder(CurrentUserPlaylistsEndpoint::default())
     }
 
-    pub fn saved_shows(&mut self) -> Builder<'_, F, SavedShowsEndpoint> {
+    pub fn saved_shows(&mut self) -> Builder<'_, F, V, SavedShowsEndpoint> {
         self.builder(SavedShowsEndpoint::default())
     }
 
@@ -706,7 +783,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
             .await
     }
 
-    pub fn saved_tracks(&mut self) -> Builder<'_, F, SavedTracksEndpoint> {
+    pub fn saved_tracks(&mut self) -> Builder<'_, F, V, SavedTracksEndpoint> {
         self.builder(SavedTracksEndpoint::default())
     }
 
@@ -732,14 +809,14 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     pub fn current_user_top_items(
         &mut self,
         r#type: UserItemType,
-    ) -> Builder<'_, F, UserTopItemsEndpoint> {
+    ) -> Builder<'_, F, V, UserTopItemsEndpoint> {
         self.builder(UserTopItemsEndpoint {
             r#type,
             ..Default::default()
         })
     }
 
-    pub fn follow_playlist(&mut self, id: &str) -> Builder<'_, F, FollowPlaylistBuilder> {
+    pub fn follow_playlist(&mut self, id: &str) -> Builder<'_, F, V, FollowPlaylistBuilder> {
         self.builder(FollowPlaylistBuilder {
             id: id.to_owned(),
             public: None,
@@ -751,7 +828,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
             .await
     }
 
-    pub fn followed_artists(&mut self) -> Builder<'_, F, FollowedArtistsBuilder> {
+    pub fn followed_artists(&mut self) -> Builder<'_, F, V, FollowedArtistsBuilder> {
         // Currently only the "artist" type is supported, so it's hardcoded.
         self.builder(FollowedArtistsBuilder {
             r#type: "artist".to_owned(),
@@ -762,7 +839,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     pub fn follow_artists<T: AsRef<str>>(
         &mut self,
         ids: &[T],
-    ) -> Builder<'_, F, FollowUserOrArtistEndpoint> {
+    ) -> Builder<'_, F, V, FollowUserOrArtistEndpoint> {
         self.builder(FollowUserOrArtistEndpoint {
             r#type: "artist".to_owned(),
             ids: ids.iter().map(|i| i.as_ref().to_owned()).collect(),
@@ -772,7 +849,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     pub fn follow_users<T: AsRef<str>>(
         &mut self,
         ids: &[T],
-    ) -> Builder<'_, F, FollowUserOrArtistEndpoint> {
+    ) -> Builder<'_, F, V, FollowUserOrArtistEndpoint> {
         self.builder(FollowUserOrArtistEndpoint {
             r#type: "user".to_owned(),
             ids: ids.iter().map(|i| i.as_ref().to_owned()).collect(),
@@ -788,7 +865,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     pub fn transfer_playback(
         &mut self,
         device_id: &str,
-    ) -> Builder<'_, F, TransferPlaybackEndpoint> {
+    ) -> Builder<'_, F, V, TransferPlaybackEndpoint> {
         self.builder(TransferPlaybackEndpoint {
             device_ids: vec![device_id.to_owned()],
             play: None,
@@ -810,7 +887,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
             .await
     }
 
-    pub fn start_playback(&mut self) -> Builder<'_, F, StartPlaybackEndpoint> {
+    pub fn start_playback(&mut self) -> Builder<'_, F, V, StartPlaybackEndpoint> {
         self.builder(StartPlaybackEndpoint::default())
     }
 
@@ -837,7 +914,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         .await
     }
 
-    pub fn seek_to_position(&mut self, position: u32) -> Builder<'_, F, SeekToPositionEndpoint> {
+    pub fn seek_to_position(&mut self, position: u32) -> Builder<'_, F, V, SeekToPositionEndpoint> {
         self.builder(SeekToPositionEndpoint {
             position_ms: position,
             device_id: None,
@@ -848,7 +925,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     pub fn set_repeat_mode(
         &mut self,
         repeat_mode: RepeatMode,
-    ) -> Builder<'_, F, SetRepeatModeEndpoint> {
+    ) -> Builder<'_, F, V, SetRepeatModeEndpoint> {
         self.builder(SetRepeatModeEndpoint {
             state: repeat_mode,
             device_id: None,
@@ -858,7 +935,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     pub fn set_playback_volume(
         &mut self,
         volume: u32,
-    ) -> Builder<'_, F, SetPlaybackVolumeEndpoint> {
+    ) -> Builder<'_, F, V, SetPlaybackVolumeEndpoint> {
         self.builder(SetPlaybackVolumeEndpoint {
             volume_percent: volume,
             device_id: None,
@@ -869,14 +946,14 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     pub fn toggle_playback_shuffle(
         &mut self,
         shuffle: bool,
-    ) -> Builder<'_, F, ToggleShuffleEndpoint> {
+    ) -> Builder<'_, F, V, ToggleShuffleEndpoint> {
         self.builder(ToggleShuffleEndpoint {
             state: shuffle,
             device_id: None,
         })
     }
 
-    pub fn recently_played_tracks(&mut self) -> Builder<'_, F, RecentlyPlayedTracksEndpoint> {
+    pub fn recently_played_tracks(&mut self) -> Builder<'_, F, V, RecentlyPlayedTracksEndpoint> {
         self.builder(RecentlyPlayedTracksEndpoint::default())
     }
 
@@ -884,7 +961,7 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
         self.get::<(), _>("/me/player/queue".to_owned(), None).await
     }
 
-    pub fn add_item_to_queue(&mut self, uri: &str) -> Builder<'_, F, AddItemToQueueEndpoint> {
+    pub fn add_item_to_queue(&mut self, uri: &str) -> Builder<'_, F, V, AddItemToQueueEndpoint> {
         self.builder(AddItemToQueueEndpoint {
             uri: uri.to_owned(),
             device_id: None,
@@ -892,146 +969,101 @@ impl<F: AuthFlow + Authorised> Client<Token, F> {
     }
 }
 
-impl Client<UnAuthenticated, AuthCodeGrantPKCEFlow> {
-    /// Get the authorisation URL and verification tokens, which are used internally
-    /// to protect against CSRF attacks and the likes.
-    ///
-    /// You must redirect the user to the received URL, which in turn redirects them to
-    /// the redirect URI you provided, along with a `code` and `state` parameter in the URl.
-    ///
-    /// They are required for the next step in the auth process.
-    pub fn get_authorisation<I>(&self, scopes: I) -> AuthorisationPKCE
-    where
-        I: IntoIterator,
-        I::Item: Into<Scope>,
-    {
-        let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
-
-        let (auth_url, csrf_token) = self
-            .oauth
-            .authorize_url(CsrfToken::new_random)
-            .add_scopes(scopes.into_iter().map(|i| i.into().0))
-            .set_pkce_challenge(pkce_challenge)
-            .url();
-
-        AuthorisationPKCE {
-            url: auth_url,
-            csrf_token,
-            pkce_verifier,
-        }
-    }
-
+impl Client<UnAuthenticated, AuthCodeFlow, CsrfVerifier> {
     /// This will exchange the `auth_code` for a token which will allow the client
     /// to make requests.
     ///
     /// `csrf_state` is used for CSRF protection.
     pub async fn authenticate(
         self,
-        auth: AuthorisationPKCE,
-        auth_code: &str,
-        csrf_state: &str,
-    ) -> Result<Client<Token, AuthCodeGrantPKCEFlow>> {
-        if csrf_state != auth.csrf_token.secret() {
+        auth_code: impl Into<String>,
+        csrf_state: impl Into<String>,
+    ) -> Result<Client<Token, AuthCodeFlow, NoVerifier>> {
+        if csrf_state.into() != *self.verifier.0.secret() {
             return Err(Error::InvalidStateParameter);
         }
 
         let token = self
             .oauth
-            .exchange_code(AuthorizationCode::new(auth_code.to_owned()))
-            .set_pkce_verifier(auth.pkce_verifier)
+            .exchange_code(AuthorizationCode::new(auth_code.into()))
             .request_async(async_http_client)
             .await?
             .set_timestamps();
 
-        Result::Ok(Client {
+        Ok(Client {
             auto_refresh: self.auto_refresh,
             auth: token,
             oauth: self.oauth,
             http: self.http,
+            verifier: NoVerifier,
             marker: PhantomData,
         })
     }
 }
 
-impl Client<UnAuthenticated, AuthCodeGrantFlow> {
-    /// Get the authorisation URL and verification tokens, which are used internally
-    /// to protect against CSRF attacks and the likes.
-    ///
-    /// You must redirect the user to the received URL, which in turn redirects them to
-    /// the redirect URI you provided, along with a `code` and `state` parameter in the URl.
-    ///
-    /// They are required for the next step in the auth process.
-    pub fn get_authorisation<I>(&self, scopes: I) -> Authorisation
-    where
-        I: IntoIterator,
-        I::Item: Into<Scope>,
-    {
-        let (auth_url, csrf_token) = self
-            .oauth
-            .authorize_url(CsrfToken::new_random)
-            .add_scopes(scopes.into_iter().map(|i| i.into().0))
-            .url();
-
-        Authorisation {
-            url: auth_url,
-            csrf_token,
-        }
-    }
-
+impl Client<UnAuthenticated, AuthCodePkceFlow, PkceVerifier> {
     /// This will exchange the `auth_code` for a token which will allow the client
     /// to make requests.
     ///
     /// `csrf_state` is used for CSRF protection.
     pub async fn authenticate(
         self,
-        auth: Authorisation,
-        auth_code: &str,
-        csrf_state: &str,
-    ) -> Result<Client<Token, AuthCodeGrantFlow>> {
-        if csrf_state != auth.csrf_token.secret() {
+        auth_code: impl Into<String>,
+        csrf_state: impl Into<String>,
+    ) -> Result<Client<Token, AuthCodePkceFlow, NoVerifier>> {
+        if csrf_state.into() != *self.verifier.csrf_token.secret() {
             return Err(Error::InvalidStateParameter);
         }
 
         let token = self
             .oauth
-            .exchange_code(AuthorizationCode::new(auth_code.to_owned()))
+            .exchange_code(AuthorizationCode::new(auth_code.into()))
+            .set_pkce_verifier(self.verifier.pkce_verifier)
             .request_async(async_http_client)
             .await?
             .set_timestamps();
 
-        Result::Ok(Client {
+        Ok(Client {
             auto_refresh: self.auto_refresh,
             auth: token,
             oauth: self.oauth,
             http: self.http,
+            verifier: NoVerifier,
             marker: PhantomData,
         })
     }
 }
 
-impl Client<UnAuthenticated, ClientCredsGrantFlow> {
+impl Client<UnAuthenticated, ClientCredsFlow, NoVerifier> {
     /// This will exchange the client credentials for an access token used
     /// to make requests.
     ///
     /// This authentication method doesn't allow for token refreshing or to access
     /// user resources.
-    pub async fn authenticate<I>(self, scopes: I) -> Result<Client<Token, ClientCredsGrantFlow>>
-    where
-        I: IntoIterator,
-        I::Item: Into<Scope>,
-    {
-        let token = self
-            .oauth
+    pub async fn authenticate(
+        ClientCredsFlow {
+            client_id,
+            client_secret,
+        }: ClientCredsFlow,
+    ) -> Result<Client<Token, ClientCredsFlow, NoVerifier>> {
+        let oauth = OAuthClient::new(
+            ClientId::new(client_id),
+            Some(ClientSecret::new(client_secret)),
+            AuthUrl::new(AUTHORISATION_URL.to_owned()).unwrap(),
+            Some(TokenUrl::new(TOKEN_URL.to_owned()).unwrap()),
+        );
+
+        let token = oauth
             .exchange_client_credentials()
-            .add_scopes(scopes.into_iter().map(|i| i.into().0))
             .request_async(async_http_client)
             .await?;
 
-        Result::Ok(Client {
-            auto_refresh: self.auto_refresh,
+        Ok(Client {
+            auto_refresh: false,
             auth: token,
-            oauth: self.oauth,
-            http: self.http,
+            oauth,
+            http: reqwest::Client::new(),
+            verifier: NoVerifier,
             marker: PhantomData,
         })
     }

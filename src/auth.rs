@@ -3,26 +3,50 @@ use std::time::Duration;
 use chrono::{DateTime, Utc};
 use oauth2::{
     basic::BasicTokenType, AccessToken, ClientId, ClientSecret, CsrfToken, PkceCodeVerifier,
-    RefreshToken, TokenResponse, TokenUrl,
+    RefreshToken, Scope, TokenResponse,
 };
-use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
-pub trait AuthFlow {
-    fn client_id(&self) -> ClientId;
-    fn client_secret(&self) -> Option<ClientSecret>;
-    fn token_url(&self) -> Option<TokenUrl> {
-        Some(TokenUrl::new("https://accounts.spotify.com/api/token".to_owned()).unwrap())
-    }
-}
-
-pub trait AuthenticationState {}
+pub trait AuthenticationState: private::Sealed {}
 impl AuthenticationState for Token {}
 impl AuthenticationState for UnAuthenticated {}
 
-pub trait Authorised {}
-impl Authorised for AuthCodeGrantPKCEFlow {}
-impl Authorised for AuthCodeGrantFlow {}
+pub trait AuthFlow: private::Sealed {
+    fn client_id(&self) -> ClientId;
+    fn client_secret(&self) -> Option<ClientSecret>;
+    fn scopes(self) -> Option<Vec<oauth2::Scope>>;
+}
+
+pub trait Refreshable: private::Sealed {}
+impl Refreshable for AuthCodeFlow {}
+impl Refreshable for AuthCodePkceFlow {}
+
+pub trait Authorised: private::Sealed {}
+impl Authorised for AuthCodeFlow {}
+impl Authorised for AuthCodePkceFlow {}
+
+pub trait Verifier: private::Sealed {}
+impl Verifier for NoVerifier {}
+impl Verifier for CsrfVerifier {}
+impl Verifier for PkceVerifier {}
+
+mod private {
+    use super::{
+        AuthCodeFlow, AuthCodePkceFlow, ClientCredsFlow, CsrfVerifier, NoVerifier, PkceVerifier,
+        Token, UnAuthenticated,
+    };
+
+    pub trait Sealed {}
+
+    impl Sealed for Token {}
+    impl Sealed for UnAuthenticated {}
+    impl Sealed for AuthCodeFlow {}
+    impl Sealed for AuthCodePkceFlow {}
+    impl Sealed for ClientCredsFlow {}
+    impl Sealed for NoVerifier {}
+    impl Sealed for CsrfVerifier {}
+    impl Sealed for PkceVerifier {}
+}
 
 /// A Spotify token.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -54,53 +78,78 @@ pub struct Token {
 #[derive(Clone, Copy, Debug)]
 pub struct UnAuthenticated;
 
-/// Authorisation code flow with PKCE is the recommended authorization flow
-/// if you’re implementing authorization in any other type of application
-/// where the client secret can’t be safely stored.
 #[derive(Clone, Debug)]
-pub struct AuthCodeGrantPKCEFlow {
-    pub client_id: String,
-}
-#[derive(Clone, Debug)]
-
-/// The authorisation code flow is suitable for long-running applications
-/// (e.g. web and mobile apps) where the user grants permission only once.
-///
-/// If you’re using the authorisation code flow in any type of application
-/// where the client secret can't be safely stored, then you should use the PKCE extension.
-pub struct AuthCodeGrantFlow {
+pub struct AuthCodeFlow {
     pub client_id: String,
     pub client_secret: String,
+    pub scopes: Vec<Scope>,
 }
-#[derive(Clone, Debug)]
 
-/// The Client Credentials flow is used in server-to-server authentication.
-///
-/// Since this flow does not include authorisation, only endpoints that
-/// do not access user information can be accessed.
-pub struct ClientCredsGrantFlow {
+#[derive(Clone, Debug)]
+pub struct AuthCodePkceFlow {
+    pub client_id: String,
+    pub scopes: Vec<Scope>,
+}
+
+#[derive(Clone, Debug)]
+pub struct ClientCredsFlow {
     pub client_id: String,
     pub client_secret: String,
 }
 
-/// Holds the URL, CSRF token and PKCE verifier.
 #[derive(Debug)]
-pub struct AuthorisationPKCE {
-    pub url: Url,
+pub struct NoVerifier;
+#[derive(Debug)]
+
+pub struct CsrfVerifier(pub(crate) CsrfToken);
+
+#[derive(Debug)]
+pub struct PkceVerifier {
     pub(crate) csrf_token: CsrfToken,
     pub(crate) pkce_verifier: PkceCodeVerifier,
 }
 
-/// Holds the URL, and CSRF token..
-#[derive(Debug)]
-pub struct Authorisation {
-    pub url: Url,
-    pub(crate) csrf_token: CsrfToken,
+impl AuthFlow for AuthCodeFlow {
+    fn client_id(&self) -> ClientId {
+        ClientId::new(self.client_id.clone())
+    }
+
+    fn client_secret(&self) -> Option<ClientSecret> {
+        Some(ClientSecret::new(self.client_secret.clone()))
+    }
+
+    fn scopes(self) -> Option<Vec<oauth2::Scope>> {
+        Some(self.scopes)
+    }
 }
 
-/// A Spotify [scope](https://developer.spotify.com/documentation/web-api/concepts/scopes).
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Scope(pub(crate) oauth2::Scope);
+impl AuthFlow for AuthCodePkceFlow {
+    fn client_id(&self) -> ClientId {
+        ClientId::new(self.client_id.clone())
+    }
+
+    fn client_secret(&self) -> Option<ClientSecret> {
+        None
+    }
+
+    fn scopes(self) -> Option<Vec<oauth2::Scope>> {
+        Some(self.scopes)
+    }
+}
+
+impl AuthFlow for ClientCredsFlow {
+    fn client_id(&self) -> ClientId {
+        ClientId::new(self.client_id.clone())
+    }
+
+    fn client_secret(&self) -> Option<ClientSecret> {
+        Some(ClientSecret::new(self.client_secret.clone()))
+    }
+
+    fn scopes(self) -> Option<Vec<oauth2::Scope>> {
+        None
+    }
+}
 
 impl Token {
     pub(crate) fn set_timestamps(self) -> Self {
@@ -148,44 +197,38 @@ impl TokenResponse<BasicTokenType> for Token {
     }
 }
 
-impl AuthFlow for AuthCodeGrantPKCEFlow {
-    fn client_id(&self) -> ClientId {
-        ClientId::new(self.client_id.clone())
-    }
-
-    fn client_secret(&self) -> Option<ClientSecret> {
-        None
-    }
-}
-
-impl AuthFlow for AuthCodeGrantFlow {
-    fn client_id(&self) -> ClientId {
-        ClientId::new(self.client_id.clone())
-    }
-
-    fn client_secret(&self) -> Option<ClientSecret> {
-        Some(ClientSecret::new(self.client_secret.clone()))
+impl AuthCodeFlow {
+    pub fn new<I>(client_id: impl Into<String>, client_secret: impl Into<String>, scopes: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Into<String>,
+    {
+        Self {
+            client_id: client_id.into(),
+            client_secret: client_secret.into(),
+            scopes: scopes.into_iter().map(|s| Scope::new(s.into())).collect(),
+        }
     }
 }
 
-impl AuthFlow for ClientCredsGrantFlow {
-    fn client_id(&self) -> ClientId {
-        ClientId::new(self.client_id.clone())
-    }
-
-    fn client_secret(&self) -> Option<ClientSecret> {
-        Some(ClientSecret::new(self.client_secret.clone()))
-    }
-}
-
-impl From<&str> for Scope {
-    fn from(value: &str) -> Self {
-        Scope(oauth2::Scope::new(value.to_owned()))
+impl AuthCodePkceFlow {
+    pub fn new<I>(client_id: impl Into<String>, scopes: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Into<String>,
+    {
+        Self {
+            client_id: client_id.into(),
+            scopes: scopes.into_iter().map(|s| Scope::new(s.into())).collect(),
+        }
     }
 }
 
-impl From<String> for Scope {
-    fn from(value: String) -> Self {
-        Scope(oauth2::Scope::new(value))
+impl ClientCredsFlow {
+    pub fn new(client_id: impl Into<String>, client_secret: impl Into<String>) -> Self {
+        Self {
+            client_id: client_id.into(),
+            client_secret: client_secret.into(),
+        }
     }
 }

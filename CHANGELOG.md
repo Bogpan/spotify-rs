@@ -5,7 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.6] - 2023-08-30
+## [0.3.8] - 2023-09-01
+
+### Added
+
+- Added top-level documentation with examples for each auth flow and general usage.
+- Added constructors for the auth flow structs.
+- Renamed `AuthCodeGrantFlow`, `AuthCodePKCEGrantFlow` and `ClientCredsGrantFlow` to `AuthCodeFlow`, `AuthCodePkceFlow` and `ClientCredsFlow` respectively.
+- Added the `AuthCodeClient`, `AuthCodePkceClient` and `ClientCredsClient` type aliases for each of the client's authflows.
+  These are what you should use when referring to the `Client` type.
+
+### Changed
+
+- `Client::authenticate()` doesn't take `scopes` anymore for the client credentials flow, as they were needless.
+- Moved the CSRF token and PKCE verifier inside the client to make the auth flow simpler.
+- Removed `scopes` and `redirect_uri` parameters from `Client::from_refresh_token()`, as they were pointless.
+- `Client::shows().get()` now returns `Vec<Option<SimplifiedShow>>`, as the API returns null for some shows
+  and the user likely wants to know that some of their shows can't be obtained.
+- Made the  `ExternalIds` and `ExternalUrls` structs' fields public.
+- Removed the ability to implement marker traits (such as `AuthFlow`, `Verifier` etc.) for library users, using the sealed trait pattern.
+
+## [0.3.7] - 2023-08-31
 
 ### Added
 
@@ -22,7 +42,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed the `fields` option from the get-playlist builder, as it would be used to filter responses, in which case a `Playlist` couldn't be deserialized
 properly. Users can do filtering by accessing specific fields of the `Playlist` struct anyway.
-
 
 ## [0.3.5] - 2023-08-24
 

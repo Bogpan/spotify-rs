@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use crate::{
-    auth::AuthFlow,
+    auth::{AuthFlow, Verifier},
     error::Result,
     model::{
         category::{Categories, Category},
@@ -22,7 +22,7 @@ pub struct BrowseCategoryEndpoint {
     pub(crate) locale: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, BrowseCategoryEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, BrowseCategoryEndpoint> {
     #[doc = include_str!("../docs/country.md")]
     pub fn country(mut self, country: &str) -> Self {
         self.endpoint.country = Some(country.to_owned());
@@ -54,7 +54,7 @@ pub struct BrowseCategoriesEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, BrowseCategoriesEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, BrowseCategoriesEndpoint> {
     #[doc = include_str!("../docs/country.md")]
     pub fn country(mut self, country: &str) -> Self {
         self.endpoint.country = Some(country.to_owned());

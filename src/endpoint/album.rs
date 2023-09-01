@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use crate::{
-    auth::AuthFlow,
+    auth::{AuthFlow, Verifier},
     error::Result,
     model::{
         album::{Album, Albums, PagedAlbums, SavedAlbum, SimplifiedAlbum},
@@ -26,7 +26,7 @@ pub struct AlbumEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, AlbumEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AlbumEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -47,7 +47,7 @@ pub struct AlbumsEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, AlbumsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AlbumsEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -72,7 +72,7 @@ pub struct AlbumTracksEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, AlbumTracksEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AlbumTracksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -109,7 +109,7 @@ pub struct SavedAlbumsEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, SavedAlbumsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SavedAlbumsEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -143,7 +143,7 @@ pub struct NewReleasesEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, NewReleasesEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, NewReleasesEndpoint> {
     #[doc = include_str!("../docs/country.md")]
     pub fn country(mut self, country: &str) -> Self {
         self.endpoint.country = Some(country.to_owned());

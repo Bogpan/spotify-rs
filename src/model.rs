@@ -61,14 +61,14 @@ pub struct Restrictions {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ExternalIds {
-    isrc: Option<String>,
-    ean: Option<String>,
-    upc: Option<String>,
+    pub isrc: Option<String>,
+    pub ean: Option<String>,
+    pub upc: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ExternalUrls {
-    spotify: String,
+    pub spotify: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]

@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use crate::{
-    auth::AuthFlow,
+    auth::{AuthFlow, Verifier},
     error::Result,
     model::{
         audiobook::{
@@ -27,7 +27,7 @@ pub struct AudiobookEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, AudiobookEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AudiobookEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -48,7 +48,7 @@ pub struct AudiobooksEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, AudiobooksEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AudiobooksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -73,7 +73,7 @@ pub struct AudiobookChaptersEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, AudiobookChaptersEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AudiobookChaptersEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -109,7 +109,7 @@ pub struct SavedAudiobooksEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, SavedAudiobooksEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SavedAudiobooksEndpoint> {
     #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(Limit::new(limit));
@@ -148,7 +148,7 @@ pub struct ChapterEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, ChapterEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ChapterEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
@@ -169,7 +169,7 @@ pub struct ChaptersEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, ChaptersEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ChaptersEndpoint> {
     #[doc = include_str!("../docs/market.md")]
     pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());

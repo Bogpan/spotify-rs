@@ -2,7 +2,7 @@ use serde::Serialize;
 use serde_json::json;
 
 use crate::{
-    auth::AuthFlow,
+    auth::{AuthFlow, Verifier},
     client::Body,
     error::Result,
     model::{
@@ -29,7 +29,7 @@ pub struct UserTopItemsEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, UserTopItemsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, UserTopItemsEndpoint> {
     /// The time frame of the computed affinities.
     pub fn time_range(mut self, time_range: TimeRange) -> Self {
         self.endpoint.time_range = Some(time_range);
@@ -64,7 +64,7 @@ pub struct FollowPlaylistBuilder {
     pub(crate) public: Option<bool>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, FollowPlaylistBuilder> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, FollowPlaylistBuilder> {
     /// If set to `true`, the playlist will be included in the user's
     /// public playlists. Defaults to `true`.
     pub fn public(mut self, public: bool) -> Self {
@@ -90,7 +90,7 @@ pub struct FollowedArtistsBuilder {
     pub(crate) limit: Option<Limit>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, FollowedArtistsBuilder> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, FollowedArtistsBuilder> {
     /// The last artist ID retrieved from the previous request.
     pub fn after(mut self, artist_id: &str) -> Self {
         self.endpoint.after = Some(artist_id.to_owned());
@@ -119,7 +119,7 @@ pub struct FollowUserOrArtistEndpoint {
     pub(crate) ids: Vec<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, FollowUserOrArtistEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, FollowUserOrArtistEndpoint> {
     #[doc = include_str!("../docs/send.md")]
     pub async fn follow(self) -> Result<Nil> {
         self.spotify

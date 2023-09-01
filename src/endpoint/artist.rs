@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use crate::{
-    auth::AuthFlow,
+    auth::{AuthFlow, Verifier},
     error::Result,
     model::{
         album::{AlbumGroup, SimplifiedAlbum},
@@ -23,8 +23,8 @@ pub struct ArtistEndpoint {
     pub(crate) id: String,
 }
 
-impl<'a, F: AuthFlow> Builder<'a, F, ArtistEndpoint> {
-    pub fn albums(self) -> Builder<'a, F, ArtistAlbumsEndpoint> {
+impl<'a, F: AuthFlow, V: Verifier> Builder<'a, F, V, ArtistEndpoint> {
+    pub fn albums(self) -> Builder<'a, F, V, ArtistAlbumsEndpoint> {
         Builder {
             spotify: self.spotify,
             endpoint: ArtistAlbumsEndpoint {
@@ -34,7 +34,7 @@ impl<'a, F: AuthFlow> Builder<'a, F, ArtistEndpoint> {
         }
     }
 
-    pub fn top_tracks(self) -> Builder<'a, F, ArtistTopTracksEndpoint> {
+    pub fn top_tracks(self) -> Builder<'a, F, V, ArtistTopTracksEndpoint> {
         Builder {
             spotify: self.spotify,
             endpoint: ArtistTopTracksEndpoint {
@@ -73,7 +73,7 @@ pub struct ArtistAlbumsEndpoint {
     pub(crate) offset: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, ArtistAlbumsEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ArtistAlbumsEndpoint> {
     /// Sets the album types to be returned. If not supplied all album types will be returned.
     pub fn include_groups(mut self, include_groups: &[AlbumGroup]) -> Self {
         self.endpoint.include_groups = Some(query_list(include_groups));
@@ -116,9 +116,9 @@ pub struct ArtistTopTracksEndpoint {
     pub(crate) market: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, ArtistTopTracksEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ArtistTopTracksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn maket(mut self, market: &str) -> Self {
+    pub fn market(mut self, market: &str) -> Self {
         self.endpoint.market = Some(market.to_owned());
         self
     }

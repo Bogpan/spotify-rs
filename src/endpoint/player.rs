@@ -5,7 +5,7 @@ use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::{
-    auth::AuthFlow,
+    auth::{AuthFlow, Verifier},
     client::Body,
     error::Result,
     model::{player::PlayHistory, CursorPage},
@@ -62,7 +62,7 @@ pub struct TransferPlaybackEndpoint {
     pub(crate) play: Option<bool>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, TransferPlaybackEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, TransferPlaybackEndpoint> {
     /// If `true`, ensure playback happens on the new device.
     /// Otherwise, keep the current playback state.
     pub fn play(mut self, play: bool) -> Self {
@@ -88,7 +88,7 @@ pub struct StartPlaybackEndpoint {
     pub(crate) position_ms: Option<u32>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, StartPlaybackEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, StartPlaybackEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
     pub fn device_id(mut self, device_id: &str) -> Self {
         self.endpoint.device_id = Some(format!("?device_id={device_id}"));
@@ -138,7 +138,7 @@ pub struct SeekToPositionEndpoint {
     pub(crate) device_id: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, SeekToPositionEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SeekToPositionEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
     pub fn device_id(mut self, device_id: &str) -> Self {
         self.endpoint.device_id = Some(device_id.to_owned());
@@ -164,7 +164,7 @@ pub struct SetRepeatModeEndpoint {
     pub(crate) device_id: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, SetRepeatModeEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SetRepeatModeEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
     pub fn device_id(mut self, device_id: &str) -> Self {
         self.endpoint.device_id = Some(device_id.to_owned());
@@ -190,7 +190,7 @@ pub struct SetPlaybackVolumeEndpoint {
     pub(crate) device_id: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, SetPlaybackVolumeEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SetPlaybackVolumeEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
     pub fn device_id(mut self, device_id: &str) -> Self {
         self.endpoint.device_id = Some(device_id.to_owned());
@@ -216,7 +216,7 @@ pub struct ToggleShuffleEndpoint {
     pub(crate) device_id: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, ToggleShuffleEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ToggleShuffleEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
     pub fn device_id(mut self, device_id: &str) -> Self {
         self.endpoint.device_id = Some(device_id.to_owned());
@@ -244,9 +244,9 @@ pub struct RecentlyPlayedTracksEndpoint<T: TimestampMarker = Unspecified> {
     marker: PhantomData<T>,
 }
 
-impl<'a, F: AuthFlow> Builder<'a, F, RecentlyPlayedTracksEndpoint<Unspecified>> {
+impl<'a, F: AuthFlow, V: Verifier> Builder<'a, F, V, RecentlyPlayedTracksEndpoint<Unspecified>> {
     /// A Unix timestamp in miliseconds. Returns all items after (but not including) this cursor position.
-    pub fn after(self, after: u64) -> Builder<'a, F, RecentlyPlayedTracksEndpoint<After>> {
+    pub fn after(self, after: u64) -> Builder<'a, F, V, RecentlyPlayedTracksEndpoint<After>> {
         Builder {
             spotify: self.spotify,
             endpoint: RecentlyPlayedTracksEndpoint {
@@ -259,7 +259,7 @@ impl<'a, F: AuthFlow> Builder<'a, F, RecentlyPlayedTracksEndpoint<Unspecified>> 
     }
 
     /// A Unix timestamp in miliseconds. Returns all items before (but not including) this cursor position.
-    pub fn before(self, before: u64) -> Builder<'a, F, RecentlyPlayedTracksEndpoint<Before>> {
+    pub fn before(self, before: u64) -> Builder<'a, F, V, RecentlyPlayedTracksEndpoint<Before>> {
         Builder {
             spotify: self.spotify,
             endpoint: RecentlyPlayedTracksEndpoint {
@@ -272,7 +272,9 @@ impl<'a, F: AuthFlow> Builder<'a, F, RecentlyPlayedTracksEndpoint<Unspecified>> 
     }
 }
 
-impl<F: AuthFlow, T: TimestampMarker> Builder<'_, F, RecentlyPlayedTracksEndpoint<T>> {
+impl<F: AuthFlow, V: Verifier, T: TimestampMarker>
+    Builder<'_, F, V, RecentlyPlayedTracksEndpoint<T>>
+{
     #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.endpoint.limit = Some(limit);
@@ -293,7 +295,7 @@ pub struct AddItemToQueueEndpoint {
     pub(crate) device_id: Option<String>,
 }
 
-impl<F: AuthFlow> Builder<'_, F, AddItemToQueueEndpoint> {
+impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AddItemToQueueEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
     pub fn device_id(mut self, device_id: &str) -> Self {
         self.endpoint.device_id = Some(device_id.to_owned());

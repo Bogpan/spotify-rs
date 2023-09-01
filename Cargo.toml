@@ -22,3 +22,6 @@ chrono = { version = "0.4", features = ["serde"] }
 oauth2 = "4.4"
 thiserror = "1.0"
 strum = { version = "0.25", features = ["derive"] }
+
+[dev-dependencies]
+tokio = { version = "1.32", features = ["macros"] }

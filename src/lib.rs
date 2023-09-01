@@ -39,7 +39,6 @@
 //! use spotify_rs::{AuthCodeClient, AuthCodeFlow, RedirectUrl};
 //! # use std::error::Error;
 //!
-//!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn Error>> {
 //!      // This should match the redirect URI you set in your app's settings
@@ -71,7 +70,7 @@
 //! }
 //! ```
 //! The Authorisation Code Flow with PKCE is the same, except you would need to use
-//! [`AuthCodePkceFlow`] and [`AuthCodeClient`].
+//! [`AuthCodePkceFlow`] and [`AuthCodePkceClient`].
 //!
 //! The list of available scopes can be found [here](https://developer.spotify.com/documentation/web-api/concepts/scopes).
 //!

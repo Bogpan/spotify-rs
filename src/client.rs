@@ -21,44 +21,19 @@ use crate::{
     },
     body_list,
     endpoint::{
-        album::{
-            AlbumEndpoint, AlbumTracksEndpoint, AlbumsEndpoint, NewReleasesEndpoint,
-            SavedAlbumsEndpoint,
-        },
+        album::*,
         artist::ArtistEndpoint,
-        audiobook::{
-            AudiobookChaptersEndpoint, AudiobookEndpoint, AudiobooksEndpoint, ChapterEndpoint,
-            ChaptersEndpoint, SavedAudiobooksEndpoint,
-        },
+        audiobook::*,
         category::{BrowseCategoriesEndpoint, BrowseCategoryEndpoint},
-        player::{
-            AddItemToQueueEndpoint, RecentlyPlayedTracksEndpoint, RepeatMode,
-            SeekToPositionEndpoint, SetPlaybackVolumeEndpoint, SetRepeatModeEndpoint,
-            StartPlaybackEndpoint, ToggleShuffleEndpoint, TransferPlaybackEndpoint,
-        },
-        playlist::{
-            AddPlaylistItemsEndpoint, CategoryPlaylistsEndpoint, ChangePlaylistDetailsEndpoint,
-            CreatePlaylistEndpoint, CurrentUserPlaylistsEndpoint, FeaturedPlaylistsEndpoint,
-            PlaylistEndpoint, PlaylistItemsEndpoint, RemovePlaylistItemsEndpoint,
-            UpdatePlaylistItemsEndpoint, UserPlaylistsEndpoint,
-        },
+        player::*,
+        playlist::*,
         search::SearchEndpoint,
-        show::{
-            EpisodeEndpoint, EpisodesEndpoint, SavedEpisodesEndpoint, SavedShowsEndpoint,
-            ShowEndpoint, ShowEpisodesEndpoint, ShowsEndpoint,
-        },
-        track::{
-            RecommendationsEndpoint, SavedTracksEndpoint, Seed, SeedType, TrackEndpoint,
-            TracksEndpoint,
-        },
-        user::{
-            FollowPlaylistBuilder, FollowUserOrArtistEndpoint, FollowedArtistsBuilder,
-            UserTopItemsEndpoint,
-        },
+        show::*,
+        track::*,
+        user::*,
         Builder, Endpoint,
     },
-    error::Result,
-    error::{Error, SpotifyError},
+    error::{Error, Result, SpotifyError},
     model::{
         artist::{Artist, Artists},
         audio::{AudioAnalysis, AudioFeatures, AudioFeaturesResult},
@@ -363,9 +338,9 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
         }
     }
 
-    pub fn album(&mut self, id: &str) -> Builder<'_, F, V, AlbumEndpoint> {
+    pub fn album(&mut self, id: impl Into<String>) -> Builder<'_, F, V, AlbumEndpoint> {
         self.builder(AlbumEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             market: None,
         })
     }
@@ -377,9 +352,12 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
         })
     }
 
-    pub fn album_tracks(&mut self, album_id: &str) -> Builder<'_, F, V, AlbumTracksEndpoint> {
+    pub fn album_tracks(
+        &mut self,
+        album_id: impl Into<String>,
+    ) -> Builder<'_, F, V, AlbumTracksEndpoint> {
         self.builder(AlbumTracksEndpoint {
-            id: album_id.to_owned(),
+            id: album_id.into(),
             ..Default::default()
         })
     }
@@ -388,8 +366,8 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
         self.builder(NewReleasesEndpoint::default())
     }
 
-    pub fn artist(&mut self, id: &str) -> Builder<'_, F, V, ArtistEndpoint> {
-        self.builder(ArtistEndpoint { id: id.to_owned() })
+    pub fn artist(&mut self, id: impl Into<String>) -> Builder<'_, F, V, ArtistEndpoint> {
+        self.builder(ArtistEndpoint { id: id.into() })
     }
 
     pub async fn get_artists<T: AsRef<str>>(&mut self, ids: &[T]) -> Result<Vec<Artist>> {
@@ -398,9 +376,9 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
             .map(|a: Artists| a.artists)
     }
 
-    pub fn audiobook(&mut self, id: &str) -> Builder<'_, F, V, AudiobookEndpoint> {
+    pub fn audiobook(&mut self, id: impl Into<String>) -> Builder<'_, F, V, AudiobookEndpoint> {
         self.builder(AudiobookEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             market: None,
         })
     }
@@ -417,17 +395,20 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
 
     pub fn audiobook_chapters(
         &mut self,
-        audiobook_id: &str,
+        audiobook_id: impl Into<String>,
     ) -> Builder<'_, F, V, AudiobookChaptersEndpoint> {
         self.builder(AudiobookChaptersEndpoint {
-            id: audiobook_id.to_owned(),
+            id: audiobook_id.into(),
             ..Default::default()
         })
     }
 
-    pub fn browse_category(&mut self, id: &str) -> Builder<'_, F, V, BrowseCategoryEndpoint> {
+    pub fn browse_category(
+        &mut self,
+        id: impl Into<String>,
+    ) -> Builder<'_, F, V, BrowseCategoryEndpoint> {
         self.builder(BrowseCategoryEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             ..Default::default()
         })
     }
@@ -437,9 +418,9 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
     }
 
     /// *Note: Spotify's API returns `500 Server error`.*
-    pub fn chapter(&mut self, id: &str) -> Builder<'_, F, V, ChapterEndpoint> {
+    pub fn chapter(&mut self, id: impl Into<String>) -> Builder<'_, F, V, ChapterEndpoint> {
         self.builder(ChapterEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             market: None,
         })
     }
@@ -452,9 +433,9 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
         })
     }
 
-    pub fn episode(&mut self, id: &str) -> Builder<'_, F, V, EpisodeEndpoint> {
+    pub fn episode(&mut self, id: impl Into<String>) -> Builder<'_, F, V, EpisodeEndpoint> {
         self.builder(EpisodeEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             market: None,
         })
     }
@@ -478,38 +459,41 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
             .map(|m: Markets| m.markets)
     }
 
-    pub fn playlist(&mut self, id: &str) -> Builder<'_, F, V, PlaylistEndpoint> {
+    pub fn playlist(&mut self, id: impl Into<String>) -> Builder<'_, F, V, PlaylistEndpoint> {
         self.builder(PlaylistEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             ..Default::default()
         })
     }
 
     pub fn change_playlist_details(
         &mut self,
-        id: &str,
+        id: impl Into<String>,
     ) -> Builder<'_, F, V, ChangePlaylistDetailsEndpoint> {
         self.builder(ChangePlaylistDetailsEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             ..Default::default()
         })
     }
 
-    pub fn playlist_items(&mut self, id: &str) -> Builder<'_, F, V, PlaylistItemsEndpoint> {
+    pub fn playlist_items(
+        &mut self,
+        id: impl Into<String>,
+    ) -> Builder<'_, F, V, PlaylistItemsEndpoint> {
         self.builder(PlaylistItemsEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             ..Default::default()
         })
     }
 
     pub fn update_playlist_items(
         &mut self,
-        id: &str,
+        id: impl Into<String>,
         range_start: u32,
         insert_before: u32,
     ) -> Builder<'_, F, V, UpdatePlaylistItemsEndpoint> {
         self.builder(UpdatePlaylistItemsEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             range_start,
             insert_before,
             ..Default::default()
@@ -518,11 +502,11 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
 
     pub fn add_items_to_playlist<T: ToString>(
         &mut self,
-        id: &str,
+        id: impl Into<String>,
         item_uris: &[T],
     ) -> Builder<'_, F, V, AddPlaylistItemsEndpoint> {
         self.builder(AddPlaylistItemsEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             uris: item_uris.iter().map(ToString::to_string).collect(),
             position: None,
         })
@@ -530,7 +514,7 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
 
     pub fn remove_playlist_items<T: AsRef<str>>(
         &mut self,
-        id: &str,
+        id: impl Into<String>,
         item_uris: &[T],
     ) -> Builder<'_, F, V, RemovePlaylistItemsEndpoint> {
         let tracks = item_uris
@@ -539,27 +523,30 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
             .collect();
 
         self.builder(RemovePlaylistItemsEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             tracks,
             snapshot_id: None,
         })
     }
 
-    pub fn user_playlists(&mut self, user_id: &str) -> Builder<'_, F, V, UserPlaylistsEndpoint> {
+    pub fn user_playlists(
+        &mut self,
+        user_id: impl Into<String>,
+    ) -> Builder<'_, F, V, UserPlaylistsEndpoint> {
         self.builder(UserPlaylistsEndpoint {
-            id: user_id.to_owned(),
+            id: user_id.into(),
             ..Default::default()
         })
     }
 
     pub fn create_playlist(
         &mut self,
-        user_id: &str,
-        name: &str,
+        user_id: impl Into<String>,
+        name: impl Into<String>,
     ) -> Builder<'_, F, V, CreatePlaylistEndpoint> {
         self.builder(CreatePlaylistEndpoint {
-            user_id: user_id.to_owned(),
-            name: name.to_owned(),
+            user_id: user_id.into(),
+            name: name.into(),
             ..Default::default()
         })
     }
@@ -570,43 +557,44 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
 
     pub fn category_playlists(
         &mut self,
-        category_id: &str,
+        category_id: impl Into<String>,
     ) -> Builder<'_, F, V, CategoryPlaylistsEndpoint> {
         self.builder(CategoryPlaylistsEndpoint {
-            id: category_id.to_owned(),
+            id: category_id.into(),
             ..Default::default()
         })
     }
 
-    pub async fn get_playlist_image(&mut self, id: &str) -> Result<Vec<Image>> {
-        self.get::<(), _>(format!("/playlists/{id}/images"), None)
+    pub async fn get_playlist_image(&mut self, id: impl Into<String>) -> Result<Vec<Image>> {
+        self.get::<(), _>(format!("/playlists/{}/images", id.into()), None)
             .await
     }
 
-    pub async fn add_playlist_image(&mut self, id: &str, image: &[u8]) -> Result<Nil> {
+    pub async fn add_playlist_image(&mut self, id: impl Into<String>, image: &[u8]) -> Result<Nil> {
         let encoded_image = general_purpose::STANDARD.encode(image).into_bytes();
         let body = <Body>::File(encoded_image);
 
-        self.put(format!("/playlists/{id}/images"), body).await
+        self.put(format!("/playlists/{}/images", id.into()), body)
+            .await
     }
 
     pub fn search(
         &mut self,
-        query: &str,
+        query: impl Into<String>,
         item_types: &[Item],
     ) -> Builder<'_, F, V, SearchEndpoint> {
         let r#type = query_list(item_types);
 
         self.builder(SearchEndpoint {
-            query: query.to_owned(),
+            query: query.into(),
             r#type,
             ..Default::default()
         })
     }
 
-    pub fn show(&mut self, id: &str) -> Builder<'_, F, V, ShowEndpoint> {
+    pub fn show(&mut self, id: impl Into<String>) -> Builder<'_, F, V, ShowEndpoint> {
         self.builder(ShowEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             market: None,
         })
     }
@@ -618,16 +606,19 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
         })
     }
 
-    pub fn show_episodes(&mut self, show_id: &str) -> Builder<'_, F, V, ShowEpisodesEndpoint> {
+    pub fn show_episodes(
+        &mut self,
+        show_id: impl Into<String>,
+    ) -> Builder<'_, F, V, ShowEpisodesEndpoint> {
         self.builder(ShowEpisodesEndpoint {
-            show_id: show_id.to_owned(),
+            show_id: show_id.into(),
             ..Default::default()
         })
     }
 
-    pub fn track(&mut self, id: &str) -> Builder<'_, F, V, TrackEndpoint> {
+    pub fn track(&mut self, id: impl Into<String>) -> Builder<'_, F, V, TrackEndpoint> {
         self.builder(TrackEndpoint {
-            id: id.to_owned(),
+            id: id.into(),
             market: None,
         })
     }
@@ -639,8 +630,11 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
         })
     }
 
-    pub async fn get_track_audio_features(&mut self, id: &str) -> Result<AudioFeatures> {
-        self.get::<(), _>(format!("/audio-features/{id}"), None)
+    pub async fn get_track_audio_features(
+        &mut self,
+        id: impl Into<String>,
+    ) -> Result<AudioFeatures> {
+        self.get::<(), _>(format!("/audio-features/{}", id.into()), None)
             .await
     }
 
@@ -653,8 +647,11 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
             .map(|a: AudioFeaturesResult| a.audio_features)
     }
 
-    pub async fn get_track_audio_analysis(&mut self, id: &str) -> Result<AudioAnalysis> {
-        self.get::<(), _>(format!("/audio-analysis/{id}"), None)
+    pub async fn get_track_audio_analysis(
+        &mut self,
+        id: impl Into<String>,
+    ) -> Result<AudioAnalysis> {
+        self.get::<(), _>(format!("/audio-analysis/{}", id.into()), None)
             .await
     }
 
@@ -679,17 +676,18 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
         })
     }
 
-    pub async fn get_user(&mut self, id: &str) -> Result<User> {
-        self.get::<(), _>(format!("/users/{id}"), None).await
+    pub async fn get_user(&mut self, id: impl Into<String>) -> Result<User> {
+        self.get::<(), _>(format!("/users/{}", id.into()), None)
+            .await
     }
 
     pub async fn check_if_users_follow_playlist<T: AsRef<str>>(
         &mut self,
-        playlist_id: &str,
+        playlist_id: impl Into<String>,
         user_ids: &[T],
     ) -> Result<Vec<bool>> {
         self.get(
-            format!("/playlists/{playlist_id}/followers/contains"),
+            format!("/playlists/{}/followers/contains", playlist_id.into()),
             [("ids", query_list(user_ids))],
         )
         .await
@@ -816,15 +814,18 @@ impl<F: AuthFlow + Authorised, V: Verifier> Client<Token, F, V> {
         })
     }
 
-    pub fn follow_playlist(&mut self, id: &str) -> Builder<'_, F, V, FollowPlaylistBuilder> {
+    pub fn follow_playlist(
+        &mut self,
+        id: impl Into<String>,
+    ) -> Builder<'_, F, V, FollowPlaylistBuilder> {
         self.builder(FollowPlaylistBuilder {
-            id: id.to_owned(),
+            id: id.into(),
             public: None,
         })
     }
 
-    pub async fn unfollow_playlist(&mut self, id: &str) -> Result<Nil> {
-        self.delete::<(), _>(format!("/playlists/{id}/followers"), None)
+    pub async fn unfollow_playlist(&mut self, id: impl Into<String>) -> Result<Nil> {
+        self.delete::<(), _>(format!("/playlists/{}/followers", id.into()), None)
             .await
     }
 
@@ -864,10 +865,10 @@ impl<F: AuthFlow + Authorised, V: Verifier> Client<Token, F, V> {
 
     pub fn transfer_playback(
         &mut self,
-        device_id: &str,
+        device_id: impl Into<String>,
     ) -> Builder<'_, F, V, TransferPlaybackEndpoint> {
         self.builder(TransferPlaybackEndpoint {
-            device_ids: vec![device_id.to_owned()],
+            device_ids: vec![device_id.into()],
             play: None,
         })
     }
@@ -961,9 +962,12 @@ impl<F: AuthFlow + Authorised, V: Verifier> Client<Token, F, V> {
         self.get::<(), _>("/me/player/queue".to_owned(), None).await
     }
 
-    pub fn add_item_to_queue(&mut self, uri: &str) -> Builder<'_, F, V, AddItemToQueueEndpoint> {
+    pub fn add_item_to_queue(
+        &mut self,
+        uri: impl Into<String>,
+    ) -> Builder<'_, F, V, AddItemToQueueEndpoint> {
         self.builder(AddItemToQueueEndpoint {
-            uri: uri.to_owned(),
+            uri: uri.into(),
             device_id: None,
         })
     }

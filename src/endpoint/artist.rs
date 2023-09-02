@@ -81,8 +81,8 @@ impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ArtistAlbumsEndpoint> {
     }
 
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -118,8 +118,8 @@ pub struct ArtistTopTracksEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ArtistTopTracksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 

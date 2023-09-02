@@ -28,8 +28,8 @@ pub struct AlbumEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AlbumEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -49,8 +49,8 @@ pub struct AlbumsEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AlbumsEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -74,8 +74,8 @@ pub struct AlbumTracksEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AlbumTracksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -111,8 +111,8 @@ pub struct SavedAlbumsEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SavedAlbumsEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -145,8 +145,8 @@ pub struct NewReleasesEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, NewReleasesEndpoint> {
     #[doc = include_str!("../docs/country.md")]
-    pub fn country(mut self, country: &str) -> Self {
-        self.endpoint.country = Some(country.to_owned());
+    pub fn country(mut self, country: impl Into<String>) -> Self {
+        self.endpoint.country = Some(country.into());
         self
     }
 

@@ -24,14 +24,14 @@ pub struct BrowseCategoryEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, BrowseCategoryEndpoint> {
     #[doc = include_str!("../docs/country.md")]
-    pub fn country(mut self, country: &str) -> Self {
-        self.endpoint.country = Some(country.to_owned());
+    pub fn country(mut self, country: impl Into<String>) -> Self {
+        self.endpoint.country = Some(country.into());
         self
     }
 
     #[doc = include_str!("../docs/locale.md")]
-    pub fn locale(mut self, locale: &str) -> Self {
-        self.endpoint.locale = Some(locale.to_owned());
+    pub fn locale(mut self, locale: impl Into<String>) -> Self {
+        self.endpoint.locale = Some(locale.into());
         self
     }
 
@@ -56,14 +56,14 @@ pub struct BrowseCategoriesEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, BrowseCategoriesEndpoint> {
     #[doc = include_str!("../docs/country.md")]
-    pub fn country(mut self, country: &str) -> Self {
-        self.endpoint.country = Some(country.to_owned());
+    pub fn country(mut self, country: impl Into<String>) -> Self {
+        self.endpoint.country = Some(country.into());
         self
     }
 
     #[doc = include_str!("../docs/locale.md")]
-    pub fn locale(mut self, locale: &str) -> Self {
-        self.endpoint.locale = Some(locale.to_owned());
+    pub fn locale(mut self, locale: impl Into<String>) -> Self {
+        self.endpoint.locale = Some(locale.into());
         self
     }
 

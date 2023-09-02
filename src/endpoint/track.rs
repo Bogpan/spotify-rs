@@ -113,8 +113,8 @@ pub struct TrackEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, TrackEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -133,8 +133,8 @@ pub struct TracksEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, TracksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -156,8 +156,8 @@ pub struct SavedTracksEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SavedTracksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -244,8 +244,8 @@ impl<F: AuthFlow, V: Verifier, S: SeedType> Builder<'_, F, V, RecommendationsEnd
     }
 
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 

@@ -29,8 +29,8 @@ pub struct AudiobookEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AudiobookEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -50,8 +50,8 @@ pub struct AudiobooksEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AudiobooksEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -75,8 +75,8 @@ pub struct AudiobookChaptersEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AudiobookChaptersEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -150,8 +150,8 @@ pub struct ChapterEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ChapterEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -171,8 +171,8 @@ pub struct ChaptersEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ChaptersEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 

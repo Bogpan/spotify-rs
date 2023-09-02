@@ -27,8 +27,8 @@ pub struct SearchEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SearchEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 

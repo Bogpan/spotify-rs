@@ -90,14 +90,14 @@ pub struct StartPlaybackEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, StartPlaybackEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
-    pub fn device_id(mut self, device_id: &str) -> Self {
-        self.endpoint.device_id = Some(format!("?device_id={device_id}"));
+    pub fn device_id(mut self, device_id: impl Into<String>) -> Self {
+        self.endpoint.device_id = Some(format!("?device_id={}", device_id.into()));
         self
     }
 
     /// The *URI* of the context to play. Valid contexts are albums, artists and playlists.
-    pub fn context_uri(mut self, context_uri: &str) -> Self {
-        self.endpoint.context_uri = Some(context_uri.to_owned());
+    pub fn context_uri(mut self, context_uri: impl Into<String>) -> Self {
+        self.endpoint.context_uri = Some(context_uri.into());
         self
     }
 
@@ -140,8 +140,8 @@ pub struct SeekToPositionEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SeekToPositionEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
-    pub fn device_id(mut self, device_id: &str) -> Self {
-        self.endpoint.device_id = Some(device_id.to_owned());
+    pub fn device_id(mut self, device_id: impl Into<String>) -> Self {
+        self.endpoint.device_id = Some(device_id.into());
         self
     }
 
@@ -166,8 +166,8 @@ pub struct SetRepeatModeEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SetRepeatModeEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
-    pub fn device_id(mut self, device_id: &str) -> Self {
-        self.endpoint.device_id = Some(device_id.to_owned());
+    pub fn device_id(mut self, device_id: impl Into<String>) -> Self {
+        self.endpoint.device_id = Some(device_id.into());
         self
     }
 
@@ -192,8 +192,8 @@ pub struct SetPlaybackVolumeEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, SetPlaybackVolumeEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
-    pub fn device_id(mut self, device_id: &str) -> Self {
-        self.endpoint.device_id = Some(device_id.to_owned());
+    pub fn device_id(mut self, device_id: impl Into<String>) -> Self {
+        self.endpoint.device_id = Some(device_id.into());
         self
     }
 
@@ -218,8 +218,8 @@ pub struct ToggleShuffleEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ToggleShuffleEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
-    pub fn device_id(mut self, device_id: &str) -> Self {
-        self.endpoint.device_id = Some(device_id.to_owned());
+    pub fn device_id(mut self, device_id: impl Into<String>) -> Self {
+        self.endpoint.device_id = Some(device_id.into());
         self
     }
 
@@ -297,8 +297,8 @@ pub struct AddItemToQueueEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, AddItemToQueueEndpoint> {
     #[doc = include_str!("../docs/device_id.md")]
-    pub fn device_id(mut self, device_id: &str) -> Self {
-        self.endpoint.device_id = Some(device_id.to_owned());
+    pub fn device_id(mut self, device_id: impl Into<String>) -> Self {
+        self.endpoint.device_id = Some(device_id.into());
         self
     }
 

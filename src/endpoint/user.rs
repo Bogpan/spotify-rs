@@ -92,8 +92,8 @@ pub struct FollowedArtistsBuilder {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, FollowedArtistsBuilder> {
     /// The last artist ID retrieved from the previous request.
-    pub fn after(mut self, artist_id: &str) -> Self {
-        self.endpoint.after = Some(artist_id.to_owned());
+    pub fn after(mut self, artist_id: impl Into<String>) -> Self {
+        self.endpoint.after = Some(artist_id.into());
         self
     }
 

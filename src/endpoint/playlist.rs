@@ -37,8 +37,8 @@ pub struct PlaylistEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, PlaylistEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -66,8 +66,8 @@ pub struct ChangePlaylistDetailsEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ChangePlaylistDetailsEndpoint> {
     /// The new name for the playlist.
-    pub fn name(mut self, name: &str) -> Self {
-        self.endpoint.name = Some(name.to_owned());
+    pub fn name(mut self, name: impl Into<String>) -> Self {
+        self.endpoint.name = Some(name.into());
         self
     }
 
@@ -86,8 +86,8 @@ impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, ChangePlaylistDetailsEndpoint> 
     }
 
     /// The new description for the playlist.
-    pub fn description(mut self, description: &str) -> Self {
-        self.endpoint.description = Some(description.to_owned());
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.endpoint.description = Some(description.into());
         self
     }
 
@@ -113,8 +113,8 @@ pub struct PlaylistItemsEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, PlaylistItemsEndpoint> {
     #[doc = include_str!("../docs/market.md")]
-    pub fn market(mut self, market: &str) -> Self {
-        self.endpoint.market = Some(market.to_owned());
+    pub fn market(mut self, market: impl Into<String>) -> Self {
+        self.endpoint.market = Some(market.into());
         self
     }
 
@@ -175,8 +175,8 @@ impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, UpdatePlaylistItemsEndpoint> {
     }
 
     /// The playlist's snapshot ID against which to make changes.
-    pub fn snapshot_id(mut self, snapshot_id: &str) -> Self {
-        self.endpoint.snapshot_id = Some(snapshot_id.to_owned());
+    pub fn snapshot_id(mut self, snapshot_id: impl Into<String>) -> Self {
+        self.endpoint.snapshot_id = Some(snapshot_id.into());
         self
     }
 
@@ -231,8 +231,8 @@ pub struct RemovePlaylistItemsEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, RemovePlaylistItemsEndpoint> {
     /// The playlist's snapshot ID against which to make changes.
-    pub fn snapshot_id(mut self, snapshot_id: &str) -> Self {
-        self.endpoint.snapshot_id = Some(snapshot_id.to_owned());
+    pub fn snapshot_id(mut self, snapshot_id: impl Into<String>) -> Self {
+        self.endpoint.snapshot_id = Some(snapshot_id.into());
         self
     }
 
@@ -337,8 +337,8 @@ impl<'a, F: AuthFlow, V: Verifier> Builder<'_, F, V, CreatePlaylistEndpoint<'a>>
     }
 
     /// The description for the new playlist.
-    pub fn description(mut self, description: &str) -> Self {
-        self.endpoint.description = Some(description.to_owned());
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.endpoint.description = Some(description.into());
         self
     }
 
@@ -384,14 +384,14 @@ pub struct FeaturedPlaylistsEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, FeaturedPlaylistsEndpoint> {
     #[doc = include_str!("../docs/country.md")]
-    pub fn country(mut self, country: &str) -> Self {
-        self.endpoint.country = Some(country.to_owned());
+    pub fn country(mut self, country: impl Into<String>) -> Self {
+        self.endpoint.country = Some(country.into());
         self
     }
 
     #[doc = include_str!("../docs/locale.md")]
-    pub fn locale(mut self, locale: &str) -> Self {
-        self.endpoint.locale = Some(locale.to_owned());
+    pub fn locale(mut self, locale: impl Into<String>) -> Self {
+        self.endpoint.locale = Some(locale.into());
         self
     }
 
@@ -432,8 +432,8 @@ pub struct CategoryPlaylistsEndpoint {
 
 impl<F: AuthFlow, V: Verifier> Builder<'_, F, V, CategoryPlaylistsEndpoint> {
     #[doc = include_str!("../docs/country.md")]
-    pub fn country(mut self, country: &str) -> Self {
-        self.endpoint.country = Some(country.to_owned());
+    pub fn country(mut self, country: impl Into<String>) -> Self {
+        self.endpoint.country = Some(country.into());
         self
     }
 

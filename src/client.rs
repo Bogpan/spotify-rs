@@ -1060,7 +1060,8 @@ impl Client<UnAuthenticated, ClientCredsFlow, NoVerifier> {
         let token = oauth
             .exchange_client_credentials()
             .request_async(async_http_client)
-            .await?;
+            .await?
+            .set_timestamps();
 
         Ok(Client {
             auto_refresh: false,

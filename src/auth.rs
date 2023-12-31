@@ -154,6 +154,8 @@ impl AuthFlow for ClientCredsFlow {
 impl Token {
     pub(crate) fn set_timestamps(self) -> Self {
         let created_at = Utc::now();
+
+        // `self.expires_in` is a u64, so if converting from a u64 fails, use the max i64 value (unlikely to happen)
         let expires_at = created_at
             + chrono::Duration::seconds(i64::try_from(self.expires_in).unwrap_or(i64::MAX));
 

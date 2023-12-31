@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.10] - 2023-12-31
 
 ### Changed
-- Merged [PR #1](https://github.com/Bogpan/spotify-rs/pull/1) (thanks to [domanteli0](https://github.com/domanteli0) for the PR!) which fixes the token
-  an issue where the token timestamp wouldn't get set if using the client credentials flow.
+- Merged [PR #1](https://github.com/Bogpan/spotify-rs/pull/1) (thanks to [domanteli0](https://github.com/domanteli0) for the PR!)
+  which fixes an issue where the token timestamp wouldn't get set if using the client credentials flow.
 
 ## [0.3.9] - 2023-09-01
 

@@ -7,7 +7,7 @@ spotify-rs is a Rust wrapper for the Spotify API.
 It has full API coverage and supports all the authorisation flows (except for the implicit grant flow).
 
 Usage example:
-```rs
+```rust
 use spotify_rs::{AuthCodeClient, AuthCodeFlow, RedirectUrl};
 # use std::error::Error;
 

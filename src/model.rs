@@ -1,4 +1,6 @@
-use serde::Deserialize;
+use serde::{Deserialize, de::DeserializeOwned};
+
+use crate::{client::Client, auth::{Token, AuthFlow, Verifier}, Error};
 
 pub mod album;
 pub mod artist;
@@ -23,6 +25,31 @@ pub struct Page<T> {
     pub previous: Option<String>,
     pub total: u32,
     pub items: Vec<T>,
+}
+
+impl<T: DeserializeOwned> Page<T> {
+    pub async fn get_next<F: AuthFlow, V: Verifier> (&self, client: &mut Client<Token, F, V>) -> Result<Page<T>, Error> {
+        client.get::<(), _>(self.next.as_ref().unwrap().clone(), None).await
+    }
+
+    pub async fn get_previous<F: AuthFlow, V: Verifier> (&self, client: &mut Client<Token, F, V>) -> Result<Page<T>, Error> {
+        client.get::<(), _>(self.previous.as_ref().unwrap().clone(), None).await
+    }
+
+    pub async fn fetch_all<F: AuthFlow, V: Verifier> (self, client: &mut Client<Token, F, V>) -> Result<Vec<T>, Error> {
+        
+        let mut result = self.items;
+        let mut current_page = Page{ items: Vec::new(), ..self };
+
+        loop {
+            if current_page.next.is_none() { break; }
+            let mut next_page = current_page.get_next(client).await?;
+            result.append(&mut next_page.items);
+            current_page = next_page;
+        }
+
+        Ok(result)
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]

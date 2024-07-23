@@ -9,7 +9,7 @@ It has full API coverage and supports all the authorisation flows (except for th
 Usage example:
 ```rust
 use spotify_rs::{AuthCodeClient, AuthCodeFlow, RedirectUrl};
-# use std::error::Error;
+use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

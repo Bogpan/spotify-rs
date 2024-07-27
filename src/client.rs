@@ -1016,15 +1016,18 @@ impl Client<UnAuthenticated, AuthCodePkceFlow, PkceVerifier> {
     pub async fn authenticate(
         self,
         auth_code: impl Into<String>,
-        csrf_state: impl Into<String>,
+        csrf_state: impl AsRef<str>,
     ) -> Result<Client<Token, AuthCodePkceFlow, NoVerifier>> {
-        if csrf_state.into() != *self.verifier.csrf_token.secret() {
+        let auth_code = auth_code.into().trim().to_owned();
+        let csrf_state = csrf_state.as_ref().trim();
+
+        if csrf_state != self.verifier.csrf_token.secret() {
             return Err(Error::InvalidStateParameter);
         }
 
         let token = self
             .oauth
-            .exchange_code(AuthorizationCode::new(auth_code.into()))
+            .exchange_code(AuthorizationCode::new(auth_code))
             .set_pkce_verifier(self.verifier.pkce_verifier)
             .request_async(async_http_client)
             .await?

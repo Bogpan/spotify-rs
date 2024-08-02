@@ -168,7 +168,7 @@ impl Token {
 
     /// Returns `true` if the access token has expired.
     pub fn is_expired(&self) -> bool {
-        self.created_at >= self.expires_at
+        Utc::now() >= self.expires_at
     }
 
     /// Returns `true` if a refresh token is present.

@@ -641,7 +641,7 @@ impl<F: AuthFlow, V: Verifier> Client<Token, F, V> {
     pub async fn get_tracks_audio_features<T: AsRef<str>>(
         &mut self,
         ids: &[T],
-    ) -> Result<Vec<AudioFeatures>> {
+    ) -> Result<Vec<Option<AudioFeatures>>> {
         self.get("/audio-features".to_owned(), [("ids", query_list(ids))])
             .await
             .map(|a: AudioFeaturesResult| a.audio_features)

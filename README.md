@@ -5,6 +5,13 @@
 spotify-rs is a Rust [Spotify Web API](https://developer.spotify.com/documentation/web-api) library.
 It has full API coverage and aims to be a transparent, yet convenient interface for the Spotify API.
 
+### Adding this version to your project
+To use this version, in your `Cargo.toml` file, you can use the following:
+```toml
+spotify-rs = { git = "https://github.com/Bogpan/spotify-rs.git", branch = "next" }
+```
+For documentation, you can run `cargo doc --no-deps --open` to generate and open the documentation locally.
+
 *Note: this version is the "rewrite", which features significant changes*
 *compared to the release version. However, it's still a work-in-progress, so*
 *breaking changes will occur.*
@@ -12,7 +19,7 @@ It has full API coverage and aims to be a transparent, yet convenient interface 
 *If you do want to use this version, you might want to specify the commit you want*
 *to use in your `Cargo.toml`, [as such](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#choice-of-commit).*
 
-Usage example:
+### Usage example:
 ```rust
 use spotify_rs::{AuthCodeClient, RedirectUrl};
 

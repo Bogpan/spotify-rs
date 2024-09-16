@@ -28,7 +28,7 @@ use crate::{
 
 const AUTHORISATION_URL: &str = "https://accounts.spotify.com/authorize";
 const TOKEN_URL: &str = "https://accounts.spotify.com/api/token";
-const API_URL: &str = "https://api.spotify.com/v1";
+pub(crate) const API_URL: &str = "https://api.spotify.com/v1";
 
 pub(crate) type OAuthClient = oauth2::Client<
     BasicErrorResponse,

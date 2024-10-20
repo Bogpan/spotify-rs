@@ -23,7 +23,11 @@ impl Endpoint for SeekToPositionEndpoint {}
 impl Endpoint for SetRepeatModeEndpoint {}
 impl Endpoint for SetPlaybackVolumeEndpoint {}
 impl Endpoint for ToggleShuffleEndpoint {}
-impl<T: TimestampMarker> Endpoint for RecentlyPlayedTracksEndpoint<T> {}
+impl<T: TimestampMarker> Endpoint for RecentlyPlayedTracksEndpoint<T> {
+    fn endpoint_url(&self) -> &'static str {
+        "/me/player/recently-played"
+    }
+}
 impl Endpoint for AddItemToQueueEndpoint {}
 
 // authorised only
@@ -147,9 +151,7 @@ pub fn recently_played_tracks() -> RecentlyPlayedTracksEndpoint {
 }
 
 // authorised only
-pub async fn get_user_queue(
-    spotify: &Client<impl AuthFlow + Authorised>,
-) -> Result<Queue> {
+pub async fn get_user_queue(spotify: &Client<impl AuthFlow + Authorised>) -> Result<Queue> {
     spotify
         .get::<(), _>("/me/player/queue".to_owned(), None)
         .await
@@ -211,10 +213,7 @@ impl TransferPlaybackEndpoint {
     }
 
     #[doc = include_str!("../docs/send.md")]
-    pub async fn send(
-        self,
-        spotify: &Client<impl AuthFlow + Authorised>,
-    ) -> Result<Nil> {
+    pub async fn send(self, spotify: &Client<impl AuthFlow + Authorised>) -> Result<Nil> {
         spotify.put("/me/player".to_owned(), Body::Json(self)).await
     }
 }
@@ -261,10 +260,7 @@ impl StartPlaybackEndpoint {
     }
 
     #[doc = include_str!("../docs/send.md")]
-    pub async fn send(
-        self,
-        spotify: &Client<impl AuthFlow + Authorised>,
-    ) -> Result<Nil> {
+    pub async fn send(self, spotify: &Client<impl AuthFlow + Authorised>) -> Result<Nil> {
         let endpoint = match self.device_id {
             Some(ref id) => format!("/me/player/play?device_id={id}"),
             None => "/me/player/play".to_owned(),
@@ -288,10 +284,7 @@ impl SeekToPositionEndpoint {
     }
 
     #[doc = include_str!("../docs/send.md")]
-    pub async fn send(
-        self,
-        spotify: &Client<impl AuthFlow + Authorised>,
-    ) -> Result<Nil> {
+    pub async fn send(self, spotify: &Client<impl AuthFlow + Authorised>) -> Result<Nil> {
         spotify
             .request(Method::PUT, "/me/player/seek".to_owned(), self.into(), None)
             .await
@@ -312,10 +305,7 @@ impl SetRepeatModeEndpoint {
     }
 
     #[doc = include_str!("../docs/send.md")]
-    pub async fn send(
-        self,
-        spotify: &Client<impl AuthFlow + Authorised>,
-    ) -> Result<Nil> {
+    pub async fn send(self, spotify: &Client<impl AuthFlow + Authorised>) -> Result<Nil> {
         spotify
             .request(
                 Method::PUT,
@@ -341,10 +331,7 @@ impl SetPlaybackVolumeEndpoint {
     }
 
     #[doc = include_str!("../docs/send.md")]
-    pub async fn send(
-        self,
-        spotify: &Client<impl AuthFlow + Authorised>,
-    ) -> Result<Nil> {
+    pub async fn send(self, spotify: &Client<impl AuthFlow + Authorised>) -> Result<Nil> {
         spotify
             .request(
                 Method::PUT,
@@ -370,10 +357,7 @@ impl ToggleShuffleEndpoint {
     }
 
     #[doc = include_str!("../docs/send.md")]
-    pub async fn send(
-        self,
-        spotify: &Client<impl AuthFlow + Authorised>,
-    ) -> Result<Nil> {
+    pub async fn send(self, spotify: &Client<impl AuthFlow + Authorised>) -> Result<Nil> {
         spotify
             .request(
                 Method::PUT,
@@ -415,7 +399,7 @@ impl RecentlyPlayedTracksEndpoint<Unspecified> {
     }
 }
 
-impl<T: TimestampMarker> RecentlyPlayedTracksEndpoint<T> {
+impl<T: TimestampMarker + Default> RecentlyPlayedTracksEndpoint<T> {
     #[doc = include_str!("../docs/limit.md")]
     pub fn limit(mut self, limit: u32) -> Self {
         self.limit = Some(limit);
@@ -426,7 +410,7 @@ impl<T: TimestampMarker> RecentlyPlayedTracksEndpoint<T> {
     pub async fn get(
         self,
         spotify: &Client<impl AuthFlow + Authorised>,
-    ) -> Result<CursorPage<PlayHistory>> {
+    ) -> Result<CursorPage<PlayHistory, Self>> {
         spotify
             .get("/me/player/recently-played".to_owned(), self)
             .await
@@ -447,10 +431,7 @@ impl AddItemToQueueEndpoint {
     }
 
     #[doc = include_str!("../docs/send.md")]
-    pub async fn send(
-        self,
-        spotify: &Client<impl AuthFlow + Authorised>,
-    ) -> Result<Nil> {
+    pub async fn send(self, spotify: &Client<impl AuthFlow + Authorised>) -> Result<Nil> {
         spotify
             .request(
                 Method::POST,

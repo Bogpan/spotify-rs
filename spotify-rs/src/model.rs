@@ -1,6 +1,7 @@
 use crate::{
     auth::AuthFlow,
     client::{self, Client},
+    endpoint::Endpoint,
     error::Result,
     Error, Token,
 };
@@ -57,7 +58,7 @@ impl<T: Clone + DeserializeOwned> Page<T> {
     /// Get the next page.
     ///
     /// If there is no next page, this will return an
-    /// [`Error::NoRemainingPages`](crate::error::Error::NoRemainingPages)
+    /// [`Error::NoRemainingPages`](crate::error::Error::NoRemainingPages).
     pub async fn get_next(&self, spotify: &Client<Token, impl AuthFlow>) -> Result<Self> {
         let Some(next) = self.next.as_ref() else {
             return Err(Error::NoRemainingPages);
@@ -73,7 +74,7 @@ impl<T: Clone + DeserializeOwned> Page<T> {
     /// Get the previous page.
     ///
     /// If there is no previous page, this will return an
-    /// [`Error::NoRemainingPages`](crate::error::Error::NoRemainingPages)
+    /// [`Error::NoRemainingPages`](crate::error::Error::NoRemainingPages).
     pub async fn get_previous(&self, spotify: &Client<Token, impl AuthFlow>) -> Result<Self> {
         let Some(previous) = self.previous.as_ref() else {
             return Err(Error::NoRemainingPages);
@@ -117,7 +118,7 @@ impl<T: Clone + DeserializeOwned> Page<T> {
         Ok(items)
     }
 
-    /// Get all of the pages - that is, all the pages found both before and
+    /// Get the items of all of the pages - that is, all the pages found both before and
     /// after the current one.
     pub async fn get_all(
         mut self,
@@ -170,23 +171,77 @@ impl<T: Clone + DeserializeOwned> Page<T> {
     }
 }
 
+/// This represents a page of items, which is a segment of data returned by the
+/// Spotify API.
+///
+/// It's similar to [`Page`], except that it uses a different approach for
+/// pagination - instead of using a `next` and `previous` field to get another
+/// page, it uses a Unix timestamp (in miliseconds).
+///
+/// To get the rest of the data, the `cursors` field (and others), or, preferably,
+/// the [get_before](Self::get_before) and [get_after](Self::get_after) methods can be used.
+// TODO getting a cursor page throws a deserialization error if there are no more available pages
+// (and possibly in other situations)
+// it happens because some fields are null when they shouldn't be
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-pub struct CursorPage<T: Clone> {
+pub struct CursorPage<T: Clone, E: Endpoint + Default> {
+    /// The URL to the API endpoint returning this page.
     pub href: String,
+    /// The maximum amount of items in the response.
     pub limit: u32,
+    /// The URL to the next page.
     pub next: Option<String>,
+    /// The cursor object used to get the previous/next page.
     pub cursors: Cursor,
+    /// The amount of returned items.
     pub total: Option<u32>,
+    /// A list of the items, which includes `null` values.
     pub items: Vec<Option<T>>,
+    // Used to keep track of which endpoint should be called to
+    // get subsequent pages.
+    #[serde(skip)]
+    endpoint: E,
 }
 
-impl<T: Clone + DeserializeOwned> CursorPage<T> {
+impl<T: Clone + DeserializeOwned, E: Endpoint + Default> CursorPage<T, E> {
     /// Get a list of only the `Some` values from a Cursor Page's items.
     pub fn filtered_items(&self) -> Vec<T> {
         self.items.clone().into_iter().flatten().collect()
     }
+
+    /// Get the page chronologically before the current one.
+    ///
+    /// If there is no previous page, this will return an
+    /// [`Error::NoRemainingPages`](crate::error::Error::NoRemainingPages).
+    pub async fn get_before(&self, spotify: &Client<Token, impl AuthFlow>) -> Result<Self> {
+        let Some(before) = self.cursors.before.as_ref() else {
+            return Err(Error::NoRemainingPages);
+        };
+
+        spotify
+            .get(
+                self.endpoint.endpoint_url().to_owned(),
+                [("before", before)],
+            )
+            .await
+    }
+
+    /// Get the page chronologically after the current one.
+    ///
+    /// If there is no previous page, this will return an
+    /// [`Error::NoRemainingPages`](crate::error::Error::NoRemainingPages).
+    pub async fn get_after(&self, spotify: &Client<Token, impl AuthFlow>) -> Result<Self> {
+        let Some(after) = self.cursors.after.as_ref() else {
+            return Err(Error::NoRemainingPages);
+        };
+
+        spotify
+            .get(self.endpoint.endpoint_url().to_owned(), [("after", after)])
+            .await
+    }
 }
 
+/// A cursor used to paginate results returned as a [`CursorPage`].
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct Cursor {
     pub after: Option<String>,

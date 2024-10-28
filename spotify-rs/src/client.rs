@@ -240,7 +240,7 @@ impl<F: AuthFlow> Client<Token, F> {
 
             if deserialized.is_err() {
                 tracing::error!(
-                    body = std::str::from_utf8(&bytes).map_err(|_| Error::Http(
+                    body = %std::str::from_utf8(&bytes).map_err(|_| Error::Http(
                         "Error deserializing the response body to valid UTF-8.".to_owned()
                     ))?,
                     "Failed to deserialize the response body into an object or Nil."

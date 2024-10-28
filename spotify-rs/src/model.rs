@@ -180,7 +180,6 @@ impl<T: Clone + DeserializeOwned> Page<T> {
 ///
 /// To get the rest of the data, the `cursors` field (and others), or, preferably,
 /// the [get_before](Self::get_before) and [get_after](Self::get_after) methods can be used.
-// TODO getting a cursor page throws a deserialization error if there are no more available pages
 // (and possibly in other situations)
 // it happens because some fields are null when they shouldn't be
 #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -192,7 +191,7 @@ pub struct CursorPage<T: Clone, E: Endpoint + Default> {
     /// The URL to the next page.
     pub next: Option<String>,
     /// The cursor object used to get the previous/next page.
-    pub cursors: Cursor,
+    pub cursors: Option<Cursor>,
     /// The amount of returned items.
     pub total: Option<u32>,
     /// A list of the items, which includes `null` values.
@@ -214,7 +213,11 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default> CursorPage<T, E> {
     /// If there is no previous page, this will return an
     /// [`Error::NoRemainingPages`](crate::error::Error::NoRemainingPages).
     pub async fn get_before(&self, spotify: &Client<Token, impl AuthFlow>) -> Result<Self> {
-        let Some(before) = self.cursors.before.as_ref() else {
+        let Some(ref cursors) = self.cursors else {
+            return Err(Error::NoRemainingPages);
+        };
+
+        let Some(before) = cursors.before.as_ref() else {
             return Err(Error::NoRemainingPages);
         };
 
@@ -231,7 +234,11 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default> CursorPage<T, E> {
     /// If there is no previous page, this will return an
     /// [`Error::NoRemainingPages`](crate::error::Error::NoRemainingPages).
     pub async fn get_after(&self, spotify: &Client<Token, impl AuthFlow>) -> Result<Self> {
-        let Some(after) = self.cursors.after.as_ref() else {
+        let Some(ref cursors) = self.cursors else {
+            return Err(Error::NoRemainingPages);
+        };
+
+        let Some(after) = cursors.after.as_ref() else {
             return Err(Error::NoRemainingPages);
         };
 

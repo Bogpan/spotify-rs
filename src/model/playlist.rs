@@ -52,7 +52,7 @@ pub struct PlaylistTrack {
     /// The Spotify user who added the track or episode. Note: some very old playlists may return null in this field.
     pub added_by: Option<ReferenceUser>,
     pub is_local: bool,
-    pub track: PlayableItem,
+    pub track: Option<PlayableItem>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

@@ -1,4 +1,4 @@
-#![warn(missing_docs)]
+// #![warn(missing_docs)]
 //! spotify-rs is a Rust wrapper for the Spotify API. It has full API coverage
 //! and supports all the authorisation flows (except for the implicit grant flow).
 //!

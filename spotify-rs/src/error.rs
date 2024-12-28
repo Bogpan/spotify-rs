@@ -78,6 +78,10 @@ pub enum Error {
     /// in case.
     #[error("Internal error: the client's PKCE verifier was missing when authenticating.")]
     InvalidClientState,
+
+    // Rename the error and rewrite the description
+    #[error("There are no remaining next/previous pages to get.")]
+    NoRemainingPages,
 }
 
 #[derive(Deserialize)]

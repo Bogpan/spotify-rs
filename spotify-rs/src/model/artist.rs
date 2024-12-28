@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use spotify_rs_macros::docs;
 
+use crate::endpoint::user::FollowedArtistsEndpoint;
+
 use super::*;
 
 /// An artist.
@@ -43,7 +45,7 @@ pub(crate) struct Artists {
 }
 
 // Used only to deserialize JSON responses with arrays that are named objects.
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) struct PagedArtists {
-    pub(crate) artists: CursorPage<Artist>,
+    pub(crate) artists: CursorPage<Artist, FollowedArtistsEndpoint>,
 }

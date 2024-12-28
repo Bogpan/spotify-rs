@@ -28,7 +28,7 @@ use crate::{
 
 const AUTHORISATION_URL: &str = "https://accounts.spotify.com/authorize";
 const TOKEN_URL: &str = "https://accounts.spotify.com/api/token";
-const API_URL: &str = "https://api.spotify.com/v1";
+pub(crate) const API_URL: &str = "https://api.spotify.com/v1";
 
 pub(crate) type OAuthClient = oauth2::Client<
     BasicErrorResponse,
@@ -240,7 +240,7 @@ impl<F: AuthFlow> Client<Token, F> {
 
             if deserialized.is_err() {
                 tracing::error!(
-                    body = std::str::from_utf8(&bytes).map_err(|_| Error::Http(
+                    body = %std::str::from_utf8(&bytes).map_err(|_| Error::Http(
                         "Error deserializing the response body to valid UTF-8.".to_owned()
                     ))?,
                     "Failed to deserialize the response body into an object or Nil."

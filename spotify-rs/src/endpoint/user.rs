@@ -276,7 +276,7 @@ impl FollowedArtistsEndpoint {
     pub async fn get(
         self,
         spotify: &Client<impl AuthFlow + Authorised>,
-    ) -> Result<CursorPage<Artist>> {
+    ) -> Result<CursorPage<Artist, Self>> {
         spotify
             .get("/me/following".to_owned(), self)
             .await

@@ -121,10 +121,12 @@ pub fn create_playlist<'a>(
     }
 }
 
+// TODO deprecated
 pub fn featured_playlists() -> FeaturedPlaylistsEndpoint {
     FeaturedPlaylistsEndpoint::default()
 }
 
+// TODO deprecated
 pub fn category_playlists(category_id: impl Into<String>) -> CategoryPlaylistsEndpoint {
     CategoryPlaylistsEndpoint {
         id: category_id.into(),
@@ -350,7 +352,6 @@ impl RemovePlaylistItemsEndpoint {
     }
 
     #[doc = include_str!("../docs/send.md")]
-
     pub async fn send(self, spotify: &Client<impl AuthFlow + Authorised>) -> Result<String> {
         spotify
             .delete(format!("/playlists/{}/tracks", self.id), self.json())

@@ -67,6 +67,7 @@ pub async fn check_saved_tracks<T: AsRef<str>>(
         .await
 }
 
+// TODO deprecated
 pub async fn get_track_audio_features(
     id: impl Into<String>,
     spotify: &Client<impl AuthFlow>,
@@ -76,6 +77,7 @@ pub async fn get_track_audio_features(
         .await
 }
 
+// TODO deprecated
 pub async fn get_tracks_audio_features<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow>,
@@ -98,7 +100,7 @@ pub async fn get_track_audio_analysis(
 /// Get recommendations based on given seeds. You must specify at least one
 /// seed (whether that be a seed artist, track or genre). More seed types can
 /// be used optionally via the builder.
-///
+// TODO deprecated
 #[doc = include_str!("../docs/seed_limit.md")]
 pub fn recommendations<S: SeedType, T: AsRef<str>>(seed: Seed<T, S>) -> RecommendationsEndpoint<S> {
     let (seed_artists, seed_genres, seed_tracks) = match seed {

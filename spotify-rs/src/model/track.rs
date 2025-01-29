@@ -45,6 +45,7 @@ pub struct Track {
     /// real time.
     pub popularity: u32,
     /// The URL for a 30 second MP3 preview of the track.
+    // TODO deprecated
     pub preview_url: Option<String>,
     /// The number of the track.
     pub track_number: u32,
@@ -87,6 +88,7 @@ pub struct SimplifiedTrack {
     pub restrictions: Option<Restriction>,
     pub name: String,
     /// The URL for a 30 second MP3 preview of the track.
+    // TODO deprecated
     pub preview_url: Option<String>,
     /// The number of the track.
     pub track_number: u32,

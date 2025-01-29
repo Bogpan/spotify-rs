@@ -47,6 +47,7 @@ pub fn artist_top_tracks(id: impl Into<String>) -> ArtistTopTracksEndpoint {
     }
 }
 
+// TODO deprecated
 pub async fn get_related_artists(id: &str, spotify: &Client<impl AuthFlow>) -> Result<Vec<Artist>> {
     spotify
         .get::<(), _>(format!("/artists/{}/related-artists", id), None)

@@ -82,6 +82,7 @@ pub(crate) struct Shows {
 #[docs]
 pub struct Episode {
     /// The URL for a 30 second MP3 preview of the chapter.
+    // TODO deprecated?
     pub audio_preview_url: Option<String>,
     pub description: String,
     pub html_description: String,
@@ -114,6 +115,7 @@ pub struct Episode {
 #[docs(name = "episode")]
 pub struct SimplifiedEpisode {
     /// The URL for a 30 second MP3 preview of the chapter.
+    // TODO deprecated?
     pub audio_preview_url: Option<String>,
     pub description: String,
     pub html_description: String,

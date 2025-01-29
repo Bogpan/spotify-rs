@@ -88,6 +88,7 @@ pub(crate) struct Audiobooks {
 #[docs]
 pub struct Chapter {
     /// The URL for a 30 second MP3 preview of the chapter.
+    // TODO deprecated?
     pub audio_preview_url: Option<String>,
     #[serde(default)]
     pub available_markets: Vec<String>,
@@ -128,6 +129,7 @@ pub struct Chapter {
 #[docs(name = "chapter")]
 pub struct SimplifiedChapter {
     /// The URL for a 30 second MP3 preview of the chapter.
+    // TODO deprecated?
     pub audio_preview_url: Option<String>,
     #[serde(default)]
     pub available_markets: Vec<String>,

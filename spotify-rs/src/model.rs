@@ -202,7 +202,7 @@ pub struct CursorPage<T: Clone, E: Endpoint + Default> {
     endpoint: E,
 }
 
-impl<T: Clone + DeserializeOwned, E: Endpoint + Default> CursorPage<T, E> {
+impl<T: Clone + DeserializeOwned, E: Endpoint + Default + Clone> CursorPage<T, E> {
     /// Get a list of only the `Some` values from a Cursor Page's items.
     pub fn filtered_items(&self) -> Vec<T> {
         self.items.clone().into_iter().flatten().collect()
@@ -231,7 +231,7 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default> CursorPage<T, E> {
 
     /// Get the page chronologically after the current one.
     ///
-    /// If there is no previous page, this will return an
+    /// If there is no next page, this will return an
     /// [`Error::NoRemainingPages`](crate::error::Error::NoRemainingPages).
     pub async fn get_after(&self, spotify: &Client<Token, impl AuthFlow>) -> Result<Self> {
         let Some(ref cursors) = self.cursors else {
@@ -245,6 +245,91 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default> CursorPage<T, E> {
         spotify
             .get(self.endpoint.endpoint_url().to_owned(), [("after", after)])
             .await
+    }
+
+    /// Get the items of all the remaining pages - that is, all the pages found
+    /// after the current one.
+    pub async fn get_remaining(
+        mut self,
+        spotify: &Client<Token, impl AuthFlow>,
+    ) -> Result<Vec<Option<T>>> {
+        let mut items = std::mem::take(&mut self.items);
+        let mut page = self;
+
+        // Get all the next pages (if any)
+        if let Some(ref cursors) = page.cursors {
+            if cursors.after.is_some() {
+                loop {
+                    let next_page = page.get_after(spotify).await;
+
+                    match next_page {
+                        Ok(mut p) => {
+                            items.append(&mut p.items);
+                            page = p;
+                        }
+                        Err(err) => match err {
+                            Error::NoRemainingPages => break,
+                            _ => return Err(err),
+                        },
+                    }
+                }
+            }
+        }
+
+        Ok(items)
+    }
+
+    pub async fn get_all(
+        mut self,
+        spotify: &Client<Token, impl AuthFlow>,
+    ) -> Result<Vec<Option<T>>> {
+        let mut items = std::mem::take(&mut self.items);
+
+        // Get all the previous pages (if any)
+        if let Some(ref cursors) = self.cursors {
+            if cursors.before.is_some() {
+                let mut page = self.clone();
+
+                loop {
+                    let previous_page = page.get_before(spotify).await;
+
+                    match previous_page {
+                        Ok(mut p) => {
+                            items.append(&mut p.items);
+                            page = p;
+                        }
+                        Err(err) => match err {
+                            Error::NoRemainingPages => break,
+                            _ => return Err(err),
+                        },
+                    }
+                }
+            }
+        }
+
+        // Get all the next pages (if any)
+        if let Some(ref cursors) = self.cursors {
+            if cursors.after.is_some() {
+                let mut page = self;
+
+                loop {
+                    let next_page = page.get_after(spotify).await;
+
+                    match next_page {
+                        Ok(mut p) => {
+                            items.append(&mut p.items);
+                            page = p;
+                        }
+                        Err(err) => match err {
+                            Error::NoRemainingPages => break,
+                            _ => return Err(err),
+                        },
+                    }
+                }
+            }
+        }
+
+        Ok(items)
     }
 }
 

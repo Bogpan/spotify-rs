@@ -1,4 +1,4 @@
-use std::{collections::HashSet, time::Duration};
+use std::{collections::HashSet, fmt::Debug, time::Duration};
 
 use chrono::{DateTime, Utc};
 use oauth2::{
@@ -11,11 +11,28 @@ pub trait AuthenticationState: private::Sealed {}
 impl AuthenticationState for Token {}
 impl AuthenticationState for Unauthenticated {}
 
-pub trait AuthFlow: private::Sealed {}
+pub trait AuthFlow: private::Sealed + Debug {}
 impl AuthFlow for AuthCodeFlow {}
 impl AuthFlow for AuthCodePkceFlow {}
 impl AuthFlow for ClientCredsFlow {}
 impl AuthFlow for UnknownFlow {}
+
+impl Debug for AuthCodeFlow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AuthCodeFlow")
+            .field("csrf_token", &"[redacted]")
+            .finish()
+    }
+}
+
+impl Debug for AuthCodePkceFlow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AuthCodePkceFlow")
+            .field("csrf_token", &"[redacted]")
+            .field("pkce_verifier", &"[redacted]")
+            .finish()
+    }
+}
 
 pub trait Authorised: private::Sealed {}
 impl Authorised for AuthCodeFlow {}
@@ -149,7 +166,6 @@ pub struct Unauthenticated;
 ///
 /// This flow requires user authorisation, and thus allows the app
 /// to make requests on behalf of the user.
-#[derive(Clone, Debug)]
 pub struct AuthCodeFlow {
     pub(crate) csrf_token: CsrfToken,
 }
@@ -162,7 +178,6 @@ pub struct AuthCodeFlow {
 ///
 /// This flow requires user authorisation, and thus allows the app
 /// to make requests on behalf of the user.
-#[derive(Debug)]
 pub struct AuthCodePkceFlow {
     pub(crate) csrf_token: CsrfToken,
     pub(crate) pkce_verifier: Option<PkceCodeVerifier>,

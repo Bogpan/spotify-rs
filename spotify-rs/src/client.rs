@@ -17,6 +17,7 @@ use serde::{
     de::{value::BytesDeserializer, DeserializeOwned, IntoDeserializer},
     Serialize,
 };
+use tracing::info;
 
 use crate::{
     auth::{
@@ -219,7 +220,10 @@ impl<F: AuthFlow> Client<Token, F> {
             req = req.header(CONTENT_LENGTH, 0);
         }
 
-        let res = req.send().await?;
+        let req = req.build()?;
+        info!(headers = ?req.headers(), "{} request sent to {}", req.method(), req.url());
+
+        let res = self.http.execute(req).await?;
 
         if res.status().is_success() {
             let bytes = res.bytes().await?;

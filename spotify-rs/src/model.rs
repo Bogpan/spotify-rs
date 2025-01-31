@@ -21,6 +21,8 @@ pub mod show;
 pub mod track;
 pub mod user;
 
+const PAGE_MAX_LIMIT: u32 = 50;
+
 /// This represents a page of items, which is a segment of data returned by the
 /// Spotify API.
 ///
@@ -68,7 +70,7 @@ impl<T: Clone + DeserializeOwned> Page<T> {
         // (or rather spotify.request) appends it already.
         let next = next.replace(client::API_URL, "");
 
-        spotify.get::<(), _>(next, None).await
+        spotify.get(next, [("limit", self.limit)]).await
     }
 
     /// Get the previous page.
@@ -84,7 +86,7 @@ impl<T: Clone + DeserializeOwned> Page<T> {
         // (or rather spotify.request) appends it already.
         let previous = previous.replace(client::API_URL, "");
 
-        spotify.get::<(), _>(previous, None).await
+        spotify.get(previous, [("limit", self.limit)]).await
     }
 
     /// Get the items of all the remaining pages - that is, all the pages found
@@ -94,6 +96,7 @@ impl<T: Clone + DeserializeOwned> Page<T> {
         spotify: &Client<Token, impl AuthFlow>,
     ) -> Result<Vec<Option<T>>> {
         let mut items = std::mem::take(&mut self.items);
+        self.limit = PAGE_MAX_LIMIT;
         let mut page = self;
 
         // Get all the next pages (if any)
@@ -125,6 +128,7 @@ impl<T: Clone + DeserializeOwned> Page<T> {
         spotify: &Client<Token, impl AuthFlow>,
     ) -> Result<Vec<Option<T>>> {
         let mut items = std::mem::take(&mut self.items);
+        self.limit = PAGE_MAX_LIMIT;
 
         // Get all the previous pages (if any)
         if self.previous.is_some() {
@@ -224,7 +228,7 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default + Clone> CursorPage<T, E
         spotify
             .get(
                 self.endpoint.endpoint_url().to_owned(),
-                [("before", before)],
+                [("before", before), ("limit", &(self.limit.to_string()))],
             )
             .await
     }
@@ -243,7 +247,10 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default + Clone> CursorPage<T, E
         };
 
         spotify
-            .get(self.endpoint.endpoint_url().to_owned(), [("after", after)])
+            .get(
+                self.endpoint.endpoint_url().to_owned(),
+                [("after", after), ("limit", &(self.limit.to_string()))],
+            )
             .await
     }
 
@@ -254,6 +261,7 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default + Clone> CursorPage<T, E
         spotify: &Client<Token, impl AuthFlow>,
     ) -> Result<Vec<Option<T>>> {
         let mut items = std::mem::take(&mut self.items);
+        self.limit = PAGE_MAX_LIMIT;
         let mut page = self;
 
         // Get all the next pages (if any)
@@ -284,6 +292,7 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default + Clone> CursorPage<T, E
         spotify: &Client<Token, impl AuthFlow>,
     ) -> Result<Vec<Option<T>>> {
         let mut items = std::mem::take(&mut self.items);
+        self.limit = PAGE_MAX_LIMIT;
 
         // Get all the previous pages (if any)
         if let Some(ref cursors) = self.cursors {

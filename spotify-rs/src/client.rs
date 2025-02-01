@@ -17,6 +17,7 @@ use serde::{
     de::{value::BytesDeserializer, DeserializeOwned, IntoDeserializer},
     Serialize,
 };
+use snafu::ResultExt;
 use tracing::info;
 
 use crate::{
@@ -24,7 +25,7 @@ use crate::{
         AuthCodeFlow, AuthCodePkceFlow, AuthFlow, AuthenticationState, ClientCredsFlow, Scopes,
         Token, Unauthenticated, UnknownFlow,
     },
-    error::{Error, Result, SpotifyError},
+    error::{DeserializationSnafu, Error, Result, SpotifyError},
 };
 
 const AUTHORISATION_URL: &str = "https://accounts.spotify.com/authorize";
@@ -135,7 +136,11 @@ impl<F: AuthFlow> Client<Token, F> {
     /// This method will fail if the `RwLock` that holds the token has
     /// been poisoned.
     pub fn access_token(&self) -> Result<String> {
-        let token = self.auth_state.read()?;
+        let token = self
+            .auth_state
+            .read()
+            .expect("The lock holding the token has been poisoned.");
+
         Ok(token.access_token.secret().clone())
     }
 
@@ -146,7 +151,11 @@ impl<F: AuthFlow> Client<Token, F> {
     /// This method will fail if the `RwLock` that holds the token has
     /// been poisoned.
     pub fn refresh_token(&self) -> Result<Option<String>> {
-        let token = self.auth_state.read()?;
+        let token = self
+            .auth_state
+            .read()
+            .expect("The lock holding the token has been poisoned.");
+
         let refresh_token = token.refresh_token.as_ref().map(|t| t.secret().clone());
 
         Ok(refresh_token)
@@ -156,7 +165,7 @@ impl<F: AuthFlow> Client<Token, F> {
     /// Only some auth flows allow for token refreshing.
     pub async fn request_refresh_token(&self) -> Result<()> {
         let refresh_token = {
-            let lock = self.auth_state.read()?;
+            let lock = self.auth_state.read().unwrap_or_else(|e| e.into_inner());
 
             let Some(refresh_token) = &lock.refresh_token else {
                 return Err(Error::RefreshUnavailable);
@@ -172,7 +181,10 @@ impl<F: AuthFlow> Client<Token, F> {
             .await?
             .set_timestamps();
 
-        let mut lock = self.auth_state.write()?;
+        let mut lock = self
+            .auth_state
+            .write()
+            .expect("The lock holding the token has been poisoned.");
         *lock = token;
         Ok(())
     }
@@ -184,9 +196,13 @@ impl<F: AuthFlow> Client<Token, F> {
         query: Option<P>,
         body: Option<Body<P>>,
     ) -> Result<T> {
-        let token_expired = {
-            let lock = self.auth_state.read()?;
-            lock.is_expired()
+        let (token_expired, secret) = {
+            let lock = self
+                .auth_state
+                .read()
+                .expect("The lock holding the token has been poisoned.");
+
+            (lock.is_expired(), lock.access_token.secret().to_owned())
         };
 
         if token_expired {
@@ -198,10 +214,9 @@ impl<F: AuthFlow> Client<Token, F> {
         }
 
         let mut req = {
-            let lock = self.auth_state.read()?;
             self.http
                 .request(method, format!("{API_URL}{endpoint}"))
-                .bearer_auth(lock.secret())
+                .bearer_auth(secret)
         };
 
         if let Some(q) = query {
@@ -229,29 +244,34 @@ impl<F: AuthFlow> Client<Token, F> {
             let bytes = res.bytes().await?;
 
             // Try to deserialize from bytes of JSON text;
-            let deserialized = serde_json::from_slice::<T>(&bytes)
-                .or_else(|e| {
-                    // if the previous operation fails, try deserializing straight
-                    // from the bytes, which works for Nil.
-                    let de: BytesDeserializer<'_, serde::de::value::Error> =
-                        bytes.as_ref().into_deserializer();
+            let deserialized = serde_json::from_slice::<T>(&bytes).or_else(|e| {
+                // if the previous operation fails, try deserializing straight
+                // from the bytes, which works for Nil.
+                let de: BytesDeserializer<'_, serde::de::value::Error> =
+                    bytes.as_ref().into_deserializer();
 
-                    // This line also converts the serde::de::value::Error to a serde_json::Error
-                    // to make it clearer to the end user that deserialization failed.
-                    T::deserialize(de).map_err(|_| e)
-                })
-                .map_err(Error::from);
+                // This line also converts the serde::de::value::Error to a serde_json::Error
+                // to make it clearer to the end user that deserialization failed.
+                T::deserialize(de).map_err(|_| e)
+            });
+            // .context(DeserializationSnafu { body });
 
-            if deserialized.is_err() {
-                tracing::error!(
-                    body = %std::str::from_utf8(&bytes).map_err(|_| Error::Http(
-                        "Error deserializing the response body to valid UTF-8.".to_owned()
-                    ))?,
-                    "Failed to deserialize the response body into an object or Nil."
-                );
+            match deserialized {
+                Ok(content) => Ok(content),
+                Err(err) => {
+                    let body = std::str::from_utf8(&bytes).map_err(|_| Error::InvalidResponse)?;
+
+                    tracing::error!(
+                        %body,
+                        "Failed to deserialize the response body into an object or Nil."
+                    );
+
+                    Err(Error::Deserialization {
+                        source: err,
+                        body: body.to_owned(),
+                    })
+                }
             }
-
-            deserialized
         } else {
             Err(res.json::<SpotifyError>().await?.into())
         }

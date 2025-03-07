@@ -78,7 +78,7 @@ pub(crate) enum Body<P: Serialize = ()> {
 ///
 /// It is recommended to use one of the following: [`AuthCodeClient`], [`AuthCodePkceClient`] or [`ClientCredsClient`],
 /// depending on the chosen auth flow.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Client<A: AuthenticationState, F: AuthFlow, V: Verifier> {
     /// Dictates whether or not the client will request a new token when the
     /// current one is about the expire.

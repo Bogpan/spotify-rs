@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use super::{album::SimplifiedAlbum, artist::SimplifiedArtist, *};
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Track {
     pub album: SimplifiedAlbum,
     pub artists: Vec<SimplifiedArtist>,
@@ -27,12 +27,12 @@ pub struct Track {
     pub is_local: bool,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub(crate) struct Tracks {
     pub(crate) tracks: Vec<Track>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SimplifiedTrack {
     pub artists: Vec<SimplifiedArtist>,
     pub available_markets: Option<Vec<String>>,
@@ -53,13 +53,13 @@ pub struct SimplifiedTrack {
     pub is_local: bool,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SavedTrack {
     pub added_at: DateTime<Utc>,
     pub track: Track,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LinkedFrom {
     pub external_urls: ExternalUrls,
     pub href: String,

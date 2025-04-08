@@ -16,7 +16,7 @@ pub struct Artist {
     pub uri: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SimplifiedArtist {
     pub external_urls: ExternalUrls,
     pub href: String,

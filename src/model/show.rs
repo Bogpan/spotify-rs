@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use super::*;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Show {
     #[serde(default)]
     pub available_markets: Vec<String>,
@@ -26,7 +26,7 @@ pub struct Show {
     pub episodes: Page<SimplifiedEpisode>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SimplifiedShow {
     #[serde(default)]
     pub available_markets: Vec<String>,
@@ -48,18 +48,18 @@ pub struct SimplifiedShow {
     pub total_episodes: u32,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SavedShow {
     pub added_at: DateTime<Utc>,
     pub show: SimplifiedShow,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub(crate) struct Shows {
     pub(crate) shows: Vec<Option<SimplifiedShow>>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Episode {
     pub audio_preview_url: Option<String>,
     pub description: String,
@@ -83,7 +83,7 @@ pub struct Episode {
     pub show: SimplifiedShow,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SimplifiedEpisode {
     pub audio_preview_url: Option<String>,
     pub description: String,

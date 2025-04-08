@@ -1,12 +1,12 @@
 use oauth2::{basic::BasicErrorResponseType, RequestTokenError, StandardErrorResponse};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// An error returned by the client in a custom [`Result`].
-#[derive(Clone, Debug, Error)]
+#[derive(Clone, Debug, Error, Deserialize, Serialize)]
 pub enum Error {
     /// Error that occured during authentication.
     #[error("An error occured during authentication: {description}")]
@@ -41,19 +41,19 @@ pub enum Error {
     Spotify { status: u16, message: String },
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub(crate) struct SpotifyError {
     error: Details,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 struct Details {
     status: u16,
     message: String,
 }
 
 /// The authentication error kind.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Kind {
     /// Error response returned by the authorisation server.
     ServerResponse,

@@ -86,19 +86,6 @@ struct Details {
     message: String,
 }
 
-/// The authentication error kind.
-#[derive(Clone, Copy, Debug)]
-pub enum AuthErrorKind {
-    /// Error response returned by the authorisation server.
-    ServerResponse,
-    /// An error occurred while sending the request or receiving the response.
-    Request,
-    /// Error parsing the server response.
-    Parse,
-    /// Other types of errors (e.g. unexpected server response).
-    Unknown,
-}
-
 // Error encountered when requesting an OAuth2 access token.
 type OauthError = oauth2::RequestTokenError<
     oauth2::reqwest::Error<reqwest::Error>,

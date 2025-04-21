@@ -17,7 +17,6 @@ use serde::{
     de::{value::BytesDeserializer, DeserializeOwned, IntoDeserializer},
     Serialize,
 };
-use snafu::ResultExt;
 use tracing::info;
 
 use crate::{
@@ -25,7 +24,7 @@ use crate::{
         AuthCodeFlow, AuthCodePkceFlow, AuthFlow, AuthenticationState, ClientCredsFlow, Scopes,
         Token, Unauthenticated, UnknownFlow,
     },
-    error::{DeserializationSnafu, Error, Result, SpotifyError},
+    error::{Error, Result, SpotifyError},
 };
 
 const AUTHORISATION_URL: &str = "https://accounts.spotify.com/authorize";

@@ -17,13 +17,13 @@ use super::{Client, Endpoint};
 impl Endpoint for ArtistAlbumsEndpoint {}
 impl Endpoint for ArtistTopTracksEndpoint {}
 
-pub async fn artist(id: impl Into<String>, spotify: &Client<impl AuthFlow>) -> Result<Artist> {
+pub async fn get_artist(id: impl Into<String>, spotify: &Client<impl AuthFlow>) -> Result<Artist> {
     spotify
         .get::<(), _>(format!("/artists/{}", id.into()), None)
         .await
 }
 
-pub async fn artists<T: AsRef<str>>(
+pub async fn get_artists<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow>,
 ) -> Result<Vec<Artist>> {

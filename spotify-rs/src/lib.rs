@@ -57,7 +57,7 @@
 //!     // This should match the redirect URL you set in your app's settings
 //!     // (on the Spotify API dashboard)
 //!     let redirect_uri = RedirectUrl::new("your_redirect_url".to_owned())?;;
-//!     
+//!
 //!     // Whether or not to automatically refresh the token when it expires.
 //!     let auto_refresh = true;
 //!
@@ -69,7 +69,7 @@
 //!         redirect_uri,
 //!         auto_refresh,
 //!     );
-//!     
+//!
 //!     // After the user was redirected to `url`, they will be redirected *again*, to
 //!     // your `redirect_uri`, with the "auth_code" and "csrf_state" parameters in the URL.
 //!     // You will need to get those parameters from the URL.
@@ -80,7 +80,7 @@
 //!     // Get an album with the specified ID.
 //!     let album = spotify_rs::album("album_id").get(&spotify).await?;
 //!     println!("The name of the album is: {}", album.name);
-//!     
+//!
 //!     // The `album` method returns a builder with optional parameters you can set
 //!     // For example, this sets the market to "GB".
 //!     let album_gb = spotify_rs::album("album_id")
@@ -88,7 +88,7 @@
 //!         .get(&spotify)
 //!         .await?;
 //!     println!("The popularity of the album is {}", album_gb.popularity);
-//!     
+//!
 //!     // This gets 5 playlists of the user that authorised the app
 //!     // (it requires the playlist-read-private scope).
 //!     let user_playlists = spotify_rs::current_user_playlists()
@@ -97,7 +97,7 @@
 //!         .await?;
 //!     let result_count = user_playlists.items.len();
 //!     println!("The API returned {} playlists.", result_count);
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -130,7 +130,7 @@
 //!     // Get an album with the specified ID.
 //!     let album = spotify_rs::album("album_id").get(&spotify).await?;
 //!     println!("The name of the album is: {}", album.name);
-//!     
+//!
 //!     // The `album` method returns a builder with optional parameters you can set
 //!     // For example, this sets the market to "GB".
 //!     let album_gb = spotify_rs::album("album_id")
@@ -138,7 +138,7 @@
 //!         .get(&spotify)
 //!         .await?;
 //!     println!("The popularity of the album is {}", album_gb.popularity);
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -184,7 +184,7 @@ pub use endpoint::{
         album, album_tracks, albums, check_saved_albums, new_releases, remove_saved_albums,
         save_albums, saved_albums,
     },
-    artist::{artist, artist_albums, artist_top_tracks, artists, get_related_artists},
+    artist::{artist_albums, artist_top_tracks, get_artist, get_artists, get_related_artists},
     audiobook::{
         audiobook, audiobook_chapters, audiobooks, chapter, chapters, check_saved_audiobooks,
         remove_saved_audiobooks, save_audiobooks, saved_audiobooks,

@@ -124,35 +124,6 @@ pub struct Token {
     pub(crate) scopes: Option<Vec<oauth2::Scope>>,
 }
 
-// fn default_created_at() -> DateTime<Utc> {
-//     let created_at = Utc::now();
-//     // `self.expires_in` is a u64, so if converting from a u64 fails, use the max i64 value (unlikely to happen)
-//     // let expires_at =
-//     //     created_at + chrono::Duration::seconds(i64::try_from(self.expires_in).unwrap_or(i64::MAX));
-
-//     // Self {
-//     //     created_at,
-//     //     expires_at,
-//     //     ..self
-//     // }
-//     created_at
-// }
-
-// fn default_expires_at() -> DateTime<Utc> {
-//     let created_at = Utc::now();
-
-//     // `self.expires_in` is a u64, so if converting from a u64 fails, use the max i64 value (unlikely to happen)
-//     let expires_at =
-//         created_at + chrono::Duration::seconds(i64::try_from(self.expires_in).unwrap_or(i64::MAX));
-
-//     // Self {
-//     //     created_at,
-//     //     expires_at,
-//     //     ..self
-//     // }
-//     expires_at
-// }
-
 // Represents the state of a client that's not authenticated.
 #[doc = include_str!("docs/internal_implementation_details.md")]
 #[derive(Clone, Copy, Debug)]

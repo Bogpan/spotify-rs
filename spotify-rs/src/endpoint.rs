@@ -25,7 +25,6 @@ pub trait Endpoint: Serialize {
     // However, in the future it might be implemented for all endpoints,
     // for consistency's sake.
     fn endpoint_url(&self) -> &'static str {
-        // TODO eventually remove this, after re-implementing all endpoints URLs in this trait
         "TODO (default URL)"
     }
 }

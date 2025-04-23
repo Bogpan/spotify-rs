@@ -1,5 +1,4 @@
 # Examples
-
 This folder contains several examples, showing you how to use `spotify-rs`.
 
 You might see that the main functions return

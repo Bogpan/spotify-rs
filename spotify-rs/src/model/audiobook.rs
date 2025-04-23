@@ -88,7 +88,11 @@ pub(crate) struct Audiobooks {
 #[docs]
 pub struct Chapter {
     /// The URL for a 30 second MP3 preview of the chapter.
-    // TODO deprecated?
+    ///
+    /// **Note:** This attribute has been deprecated by Spotify. It continues to work for
+    /// applications already using the extended mode in the API.
+    ///
+    /// You can read more about this [here](https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api).
     pub audio_preview_url: Option<String>,
     #[serde(default)]
     pub available_markets: Vec<String>,
@@ -129,7 +133,11 @@ pub struct Chapter {
 #[docs(name = "chapter")]
 pub struct SimplifiedChapter {
     /// The URL for a 30 second MP3 preview of the chapter.
-    // TODO deprecated?
+    ///
+    /// **Note:** This attribute has been deprecated by Spotify. It continues to work for
+    /// applications already using the extended mode in the API.
+    ///
+    /// You can read more about this [here](https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api).
     pub audio_preview_url: Option<String>,
     #[serde(default)]
     pub available_markets: Vec<String>,

@@ -63,7 +63,10 @@ pub async fn check_saved_tracks<T: AsRef<str>>(
         .await
 }
 
-// TODO deprecated
+/// **Note:** This endpoint has been deprecated by Spotify. It continues to work for
+/// applications already using the extended mode in the API.
+///
+/// You can read more about this [here](https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api).
 pub async fn get_track_audio_features(
     id: impl Into<String>,
     spotify: &Client<impl AuthFlow>,
@@ -73,7 +76,10 @@ pub async fn get_track_audio_features(
         .await
 }
 
-// TODO deprecated
+/// **Note:** This endpoint has been deprecated by Spotify. It continues to work for
+/// applications already using the extended mode in the API.
+///
+/// You can read more about this [here](https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api).
 pub async fn get_tracks_audio_features<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow>,
@@ -96,7 +102,11 @@ pub async fn get_track_audio_analysis(
 /// Get recommendations based on given seeds. You must specify at least one
 /// seed (whether that be a seed artist, track or genre). More seed types can
 /// be used optionally via the builder.
-// TODO deprecated
+///
+/// **Note:** This endpoint has been deprecated by Spotify. It continues to work for
+/// applications already using the extended mode in the API.
+///
+/// You can read more about this [here](https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api).
 #[doc = include_str!("../docs/seed_limit.md")]
 pub fn recommendations<S: SeedType, T: AsRef<str>>(seed: Seed<T, S>) -> RecommendationsEndpoint<S> {
     let (seed_artists, seed_genres, seed_tracks) = match seed {

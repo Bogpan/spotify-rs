@@ -115,12 +115,18 @@ pub fn create_playlist<'a>(
     }
 }
 
-// TODO deprecated
+/// **Note:** This endpoint has been deprecated by Spotify. It continues to work for
+/// applications already using the extended mode in the API.
+///
+/// You can read more about this [here](https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api).
 pub fn featured_playlists() -> FeaturedPlaylistsEndpoint {
     FeaturedPlaylistsEndpoint::default()
 }
 
-// TODO deprecated
+/// **Note:** This endpoint has been deprecated by Spotify. It continues to work for
+/// applications already using the extended mode in the API.
+///
+/// You can read more about this [here](https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api).
 pub fn category_playlists(category_id: impl Into<String>) -> CategoryPlaylistsEndpoint {
     CategoryPlaylistsEndpoint {
         id: category_id.into(),

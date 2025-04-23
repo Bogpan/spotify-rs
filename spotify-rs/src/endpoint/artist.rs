@@ -47,7 +47,10 @@ pub fn artist_top_tracks(id: impl Into<String>) -> ArtistTopTracksEndpoint {
     }
 }
 
-// TODO deprecated
+/// **Note:** This endpoint has been deprecated by Spotify. It continues to work for
+/// applications already using the extended mode in the API.
+///
+/// You can read more about this [here](https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api).
 pub async fn get_related_artists(id: &str, spotify: &Client<impl AuthFlow>) -> Result<Vec<Artist>> {
     spotify
         .get::<(), _>(format!("/artists/{}/related-artists", id), None)

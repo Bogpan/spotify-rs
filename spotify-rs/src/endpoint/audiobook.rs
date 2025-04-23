@@ -45,12 +45,10 @@ pub fn audiobook_chapters(audiobook_id: impl Into<String>) -> AudiobookChaptersE
     }
 }
 
-// authorised only
 pub fn saved_audiobooks() -> SavedAudiobooksEndpoint {
     SavedAudiobooksEndpoint::default()
 }
 
-// authorised only
 pub async fn save_audiobooks<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -60,7 +58,6 @@ pub async fn save_audiobooks<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn remove_saved_audiobooks<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -70,7 +67,6 @@ pub async fn remove_saved_audiobooks<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn check_saved_audiobooks<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,

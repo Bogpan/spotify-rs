@@ -45,12 +45,10 @@ pub fn show_episodes(show_id: impl Into<String>) -> ShowEpisodesEndpoint {
     }
 }
 
-// authorised only
 pub fn saved_shows() -> SavedShowsEndpoint {
     SavedShowsEndpoint::default()
 }
 
-// authorised only
 pub async fn save_shows<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -60,7 +58,6 @@ pub async fn save_shows<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn remove_saved_shows<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -70,7 +67,6 @@ pub async fn remove_saved_shows<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn check_saved_shows<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -94,12 +90,10 @@ pub fn episodes<T: AsRef<str>>(ids: &[T]) -> EpisodesEndpoint {
     }
 }
 
-// authorised only
 pub fn saved_episodes() -> SavedEpisodesEndpoint {
     SavedEpisodesEndpoint::default()
 }
 
-// authorised only
 pub async fn save_episodes<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -109,7 +103,6 @@ pub async fn save_episodes<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn remove_saved_episodes<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -119,7 +112,6 @@ pub async fn remove_saved_episodes<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn check_saved_episodes<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,

@@ -16,19 +16,16 @@ use crate::{
 
 use super::{Client, Endpoint, EndpointPrivate};
 
-// authorised only
 pub async fn get_current_user_profile(
     spotify: &Client<impl AuthFlow + Authorised>,
 ) -> Result<PrivateUser> {
     spotify.get::<(), _>("/me".to_owned(), None).await
 }
 
-// authorised only
 pub fn current_user_top_artists() -> UserTopItemsEndpoint<ArtistsMarker> {
     UserTopItemsEndpoint::default()
 }
 
-// authorised only
 pub fn current_user_top_tracks() -> UserTopItemsEndpoint<TracksMarker> {
     UserTopItemsEndpoint::default()
 }
@@ -39,7 +36,6 @@ pub async fn get_user(id: impl Into<String>, spotify: &Client<impl AuthFlow>) ->
         .await
 }
 
-// authorised only
 pub fn follow_playlist(id: impl Into<String>) -> FollowPlaylistEndpoint {
     FollowPlaylistEndpoint {
         id: id.into(),
@@ -47,7 +43,6 @@ pub fn follow_playlist(id: impl Into<String>) -> FollowPlaylistEndpoint {
     }
 }
 
-// authorised only
 pub async fn unfollow_playlist(
     id: impl Into<String>,
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -57,7 +52,6 @@ pub async fn unfollow_playlist(
         .await
 }
 
-// authorised only
 pub fn followed_artists() -> FollowedArtistsEndpoint {
     // Currently only the "artist" type is supported, so it's hardcoded.
     FollowedArtistsEndpoint {
@@ -66,7 +60,6 @@ pub fn followed_artists() -> FollowedArtistsEndpoint {
     }
 }
 
-// authorised only
 pub async fn follow_artists<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -81,7 +74,6 @@ pub async fn follow_artists<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn unfollow_artists<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -96,7 +88,6 @@ pub async fn unfollow_artists<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn check_if_user_follows_artists<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -109,7 +100,6 @@ pub async fn check_if_user_follows_artists<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn follow_users<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -124,7 +114,6 @@ pub async fn follow_users<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn unfollow_users<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -139,7 +128,6 @@ pub async fn unfollow_users<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn check_if_user_follows_users<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -152,7 +140,6 @@ pub async fn check_if_user_follows_users<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn check_if_current_user_follow_playlist(
     playlist_id: impl Into<String>,
     spotify: &Client<impl AuthFlow + Authorised>,

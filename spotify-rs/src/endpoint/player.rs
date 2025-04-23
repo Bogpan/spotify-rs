@@ -30,7 +30,6 @@ impl<T: TimestampMarker> Endpoint for RecentlyPlayedTracksEndpoint<T> {
 }
 impl Endpoint for AddItemToQueueEndpoint {}
 
-// authorised only
 pub async fn get_playback_state(
     market: Option<&str>,
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -41,7 +40,6 @@ pub async fn get_playback_state(
         .await
 }
 
-// authorised only
 pub fn transfer_playback(device_id: impl Into<String>) -> TransferPlaybackEndpoint {
     TransferPlaybackEndpoint {
         device_ids: vec![device_id.into()],
@@ -49,7 +47,6 @@ pub fn transfer_playback(device_id: impl Into<String>) -> TransferPlaybackEndpoi
     }
 }
 
-// authorised only
 pub async fn get_available_devices(
     spotify: &Client<impl AuthFlow + Authorised>,
 ) -> Result<Vec<Device>> {
@@ -59,7 +56,6 @@ pub async fn get_available_devices(
         .map(|d: Devices| d.devices)
 }
 
-// authorised only
 pub async fn get_currently_playing_track(
     market: Option<&str>,
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -70,12 +66,10 @@ pub async fn get_currently_playing_track(
         .await
 }
 
-// authorised only
 pub fn start_playback() -> StartPlaybackEndpoint {
     StartPlaybackEndpoint::default()
 }
 
-// authorised only
 pub async fn pause_playback(
     device_id: Option<&str>,
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -86,7 +80,6 @@ pub async fn pause_playback(
         .await
 }
 
-// authorised only
 pub async fn skip_to_next(
     device_id: Option<&str>,
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -97,7 +90,6 @@ pub async fn skip_to_next(
         .await
 }
 
-// authorised only
 pub async fn skip_to_previous(
     device_id: Option<&str>,
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -113,7 +105,6 @@ pub async fn skip_to_previous(
         .await
 }
 
-// authorised only
 pub fn seek_to_position(position: u32) -> SeekToPositionEndpoint {
     SeekToPositionEndpoint {
         position_ms: position,
@@ -121,7 +112,6 @@ pub fn seek_to_position(position: u32) -> SeekToPositionEndpoint {
     }
 }
 
-// authorised only
 pub fn set_repeat_mode(repeat_mode: RepeatMode) -> SetRepeatModeEndpoint {
     SetRepeatModeEndpoint {
         state: repeat_mode,
@@ -129,7 +119,6 @@ pub fn set_repeat_mode(repeat_mode: RepeatMode) -> SetRepeatModeEndpoint {
     }
 }
 
-// authorised only
 pub fn set_playback_volume(volume: u32) -> SetPlaybackVolumeEndpoint {
     SetPlaybackVolumeEndpoint {
         volume_percent: volume,
@@ -137,7 +126,6 @@ pub fn set_playback_volume(volume: u32) -> SetPlaybackVolumeEndpoint {
     }
 }
 
-// authorised only
 pub fn toggle_playback_shuffle(shuffle: bool) -> ToggleShuffleEndpoint {
     ToggleShuffleEndpoint {
         state: shuffle,
@@ -145,19 +133,16 @@ pub fn toggle_playback_shuffle(shuffle: bool) -> ToggleShuffleEndpoint {
     }
 }
 
-// authorised only
 pub fn recently_played_tracks() -> RecentlyPlayedTracksEndpoint {
     RecentlyPlayedTracksEndpoint::default()
 }
 
-// authorised only
 pub async fn get_user_queue(spotify: &Client<impl AuthFlow + Authorised>) -> Result<Queue> {
     spotify
         .get::<(), _>("/me/player/queue".to_owned(), None)
         .await
 }
 
-// authorised only
 pub fn add_item_to_queue(uri: impl Into<String>) -> AddItemToQueueEndpoint {
     AddItemToQueueEndpoint {
         uri: uri.into(),

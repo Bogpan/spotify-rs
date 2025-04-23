@@ -32,12 +32,10 @@ pub fn tracks<T: AsRef<str>>(ids: &[T]) -> TracksEndpoint {
     }
 }
 
-// authorised only
 pub fn saved_tracks() -> SavedTracksEndpoint {
     SavedTracksEndpoint::default()
 }
 
-// authorised only
 pub async fn save_tracks<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -47,7 +45,6 @@ pub async fn save_tracks<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn remove_saved_tracks<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,
@@ -57,7 +54,6 @@ pub async fn remove_saved_tracks<T: AsRef<str>>(
         .await
 }
 
-// authorised only
 pub async fn check_saved_tracks<T: AsRef<str>>(
     ids: &[T],
     spotify: &Client<impl AuthFlow + Authorised>,

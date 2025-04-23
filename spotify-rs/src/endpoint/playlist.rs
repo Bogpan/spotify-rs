@@ -37,7 +37,6 @@ pub fn playlist(id: impl Into<String>) -> PlaylistEndpoint {
     }
 }
 
-// authorised only
 pub fn change_playlist_details(id: impl Into<String>) -> ChangePlaylistDetailsEndpoint {
     ChangePlaylistDetailsEndpoint {
         id: id.into(),
@@ -53,8 +52,7 @@ pub fn playlist_items(id: impl Into<String>) -> PlaylistItemsEndpoint {
 }
 
 // split into two functions: replace and reoder playlist items
-// (the endpoint serves two functions)>
-// authorised only
+// (the endpoint serves two functions)?
 pub fn update_playlist_items(
     id: impl Into<String>,
     range_start: u32,
@@ -68,7 +66,6 @@ pub fn update_playlist_items(
     }
 }
 
-// authorised only
 pub fn add_items_to_playlist<T: ToString>(
     id: impl Into<String>,
     item_uris: &[T],
@@ -80,7 +77,6 @@ pub fn add_items_to_playlist<T: ToString>(
     }
 }
 
-// authorised only
 pub fn remove_playlist_items<T: AsRef<str>>(
     id: impl Into<String>,
     item_uris: &[T],
@@ -97,7 +93,6 @@ pub fn remove_playlist_items<T: AsRef<str>>(
     }
 }
 
-// authorised only
 pub fn current_user_playlists() -> CurrentUserPlaylistsEndpoint {
     CurrentUserPlaylistsEndpoint::default()
 }
@@ -109,7 +104,6 @@ pub fn user_playlists(user_id: impl Into<String>) -> UserPlaylistsEndpoint {
     }
 }
 
-// authorised only
 pub fn create_playlist<'a>(
     user_id: impl Into<String>,
     name: impl Into<String>,
@@ -143,7 +137,6 @@ pub async fn get_playlist_image(
         .await
 }
 
-// authorised only
 pub async fn add_playlist_image(
     id: impl Into<String>,
     image: &[u8],

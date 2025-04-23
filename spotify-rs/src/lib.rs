@@ -243,7 +243,7 @@ pub struct Nil;
 // This is also necessary for when Spotify API endpoints that should
 // normally return empty responses, instead return (useless) non-JSON responses.
 impl<'de> Deserialize<'de> for Nil {
-    fn deserialize<D>(_: D) -> std::result::Result<Self, D::Error>
+    fn deserialize<D>(_: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {

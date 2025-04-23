@@ -160,9 +160,9 @@ impl<F: AuthFlow> Client<Token, F> {
         Ok(refresh_token)
     }
 
-    /// Request a new refresh token and updates it in the client.
+    /// Exchange the refresh token for a new access token and updates it in the client.
     /// Only some auth flows allow for token refreshing.
-    pub async fn request_refresh_token(&self) -> Result<()> {
+    pub async fn exchange_refresh_token(&self) -> Result<()> {
         let refresh_token = {
             let lock = self.auth_state.read().unwrap_or_else(|e| e.into_inner());
 
@@ -206,8 +206,18 @@ impl<F: AuthFlow> Client<Token, F> {
 
         if token_expired {
             if self.auto_refresh {
-                self.request_refresh_token().await?;
+                info!("The token has expired, attempting to refresh...");
+
+                self.exchange_refresh_token().await?;
+
+                let lock = self
+                    .auth_state
+                    .read()
+                    .expect("The lock holding the token has been poisoned.");
+
+                info!("The token has been successfully refreshed. The new token will expire in {} seconds", lock.expires_in);
             } else {
+                info!("The token has expired, automatic refresh is disabled.");
                 return Err(Error::ExpiredToken);
             }
         }

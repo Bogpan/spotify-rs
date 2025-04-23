@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     auth::AuthFlow,
     client::{self, Client},
@@ -22,6 +24,7 @@ pub mod track;
 pub mod user;
 
 const PAGE_MAX_LIMIT: u32 = 50;
+const PAGINATION_INTERVAL: Duration = Duration::from_millis(100);
 
 /// This represents a page of items, which is a segment of data returned by the
 /// Spotify API.
@@ -115,6 +118,8 @@ impl<T: Clone + DeserializeOwned> Page<T> {
                         _ => return Err(err),
                     },
                 };
+
+                tokio::time::sleep(PAGINATION_INTERVAL).await;
             }
         }
 
@@ -147,6 +152,8 @@ impl<T: Clone + DeserializeOwned> Page<T> {
                         _ => return Err(err),
                     },
                 };
+
+                tokio::time::sleep(PAGINATION_INTERVAL).await;
             }
         }
 
@@ -168,6 +175,8 @@ impl<T: Clone + DeserializeOwned> Page<T> {
                         _ => return Err(err),
                     },
                 };
+
+                tokio::time::sleep(PAGINATION_INTERVAL).await;
             }
         }
 
@@ -280,6 +289,8 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default + Clone> CursorPage<T, E
                             _ => return Err(err),
                         },
                     }
+
+                    tokio::time::sleep(PAGINATION_INTERVAL).await;
                 }
             }
         }
@@ -312,6 +323,8 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default + Clone> CursorPage<T, E
                             _ => return Err(err),
                         },
                     }
+
+                    tokio::time::sleep(PAGINATION_INTERVAL).await;
                 }
             }
         }
@@ -334,6 +347,8 @@ impl<T: Clone + DeserializeOwned, E: Endpoint + Default + Clone> CursorPage<T, E
                             _ => return Err(err),
                         },
                     }
+
+                    tokio::time::sleep(PAGINATION_INTERVAL).await;
                 }
             }
         }

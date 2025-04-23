@@ -24,6 +24,7 @@ strum = { version = "0.25", features = ["derive"] }
 tracing = "0.1"
 spotify-rs-macros = { path = "../spotify-rs-macros" }
 snafu = "0.8.5"
+tokio = { version = "1.32", features = ["time"] }
 
 [dev-dependencies]
 dotenvy = "0.15.7"

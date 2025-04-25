@@ -22,7 +22,7 @@ chrono = { version = "0.4", features = ["serde"] }
 oauth2 = "4.4"
 strum = { version = "0.25", features = ["derive"] }
 tracing = "0.1"
-spotify-rs-macros = { path = "../spotify-rs-macros" }
+spotify-rs-macros = { path = "../spotify-rs-macros", version = "0.1.0" }
 snafu = "0.8.5"
 tokio = { version = "1.32", features = ["time"] }
 

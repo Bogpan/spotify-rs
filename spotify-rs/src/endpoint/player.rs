@@ -238,6 +238,13 @@ impl StartPlaybackEndpoint {
         self
     }
 
+    /// The *URI* of the track to start/resume playback.
+    /// The track must be in the context specified by `context_uri`.
+    pub fn offset_uri(mut self, uri: &str) -> Self {
+        self.offset = Some(json!({ "uri": uri }));
+        self
+    }
+
     /// The position at which to start/resume the playback.
     pub fn position_ms(mut self, position_ms: u32) -> Self {
         self.position_ms = Some(position_ms);

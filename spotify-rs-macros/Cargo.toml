@@ -2,6 +2,8 @@
 name = "spotify-rs-macros"
 version = "0.1.0"
 edition = "2024"
+description = "Supporting crate for spotify-rs."
+license = "MIT OR Apache-2.0"
 
 [lib]
 proc-macro = true

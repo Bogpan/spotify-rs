@@ -221,6 +221,7 @@ impl<'a, T: AsRef<str> + Clone> Seed<'a, T, SeedTracks> {
 //     TargetValence(f32),
 // }
 
+/// Represents what feature exactly is set.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, IntoStaticStr)]
 #[strum(serialize_all = "snake_case")]
 pub enum FeatureKind {
@@ -240,6 +241,30 @@ pub enum FeatureKind {
     Valence,
 }
 
+/// Represents the value of a feature. They can be either floats or values.
+///
+/// The value can be directly specified (e.g. 0, 100, 0.5, Mode::Major etc.), as this type
+/// implements `From` for various type.
+///
+/// **Note:** You *must* use the right values yourself for each option. They can either take
+/// integers from 0 - 100, floats from 0 - 1, or special types (like [`Mode`](crate::model::audio::Mode))
+///
+/// In order to know what values each feature takes, you can use
+/// [this](https://developer.spotify.com/documentation/web-api/reference/get-recommendations)
+/// page.
+///
+/// # Example
+///
+/// ```rs
+/// let recommendations = recommendations(Seed::artists(&["59XQUEHhy5830QsAsmhe2M"]))
+/// .features(&[
+///     Feature::min(FeatureKind::Energy, 0.5),
+///     Feature::max(FeatureKind::Popularity, 64),
+///     Feature::target(FeatureKind::Mode, Mode::Major),
+/// ])
+/// .get(spotify)
+/// .await?;
+/// ```
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(untagged)]
 pub enum FeatureValue {
@@ -265,11 +290,8 @@ impl From<&[Feature]> for Features {
     }
 }
 
-// TODO document that the right types and values must be used
-// e.g. popularity is a u32 from 0 - 100, acousticness is a float from 0.0 - 1.0 etc.
-//
-// alternative idea: use an f32 0.0 - 1.0 everywhere and offer constants and types for
-// other things (like Mode, Key etc.)
+/// Represesnts a list of features. You can use an array or vector instead of it,
+/// as this type implements the `From` trait.
 #[derive(Clone, Debug, Default)]
 pub struct Features(Vec<Feature>);
 
@@ -371,6 +393,17 @@ impl Feature {
             target: None,
             min: None,
             max: Some(max.into()),
+        }
+    }
+
+    pub fn exact<T: Into<FeatureValue>>(kind: FeatureKind, value: T) -> Self {
+        let value = value.into();
+
+        Self {
+            kind,
+            target: Some(value),
+            min: Some(value),
+            max: Some(value),
         }
     }
 }

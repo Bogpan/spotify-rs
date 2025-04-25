@@ -2,8 +2,14 @@
 [![docs.rs](https://img.shields.io/docsrs/spotify-rs)](https://docs.rs/spotify-rs)
 
 # spotify-rs
-spotify-rs is a Rust [Spotify Web API](https://developer.spotify.com/documentation/web-api) library.
-It has full API coverage and aims to be a transparent, yet convenient interface for the Spotify API.
+spotify-rs is a Rust library for the [Spotify Web API](https://developer.spotify.com/documentation/web-api),
+offering full API coverage.
+
+It was created with the goal of safety and compile-time correctness, encouraging intuitive correct usage
+of the Spotify API.
+
+Over time, the target has also become providing a transparent interface over the actual API, while
+at the same time improving the areas where the Spotify API is awkward and inconsistent.
 
 ### Usage example:
 ```rust

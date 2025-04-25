@@ -3,7 +3,7 @@ use serde::Serialize;
 use crate::{
     auth::AuthFlow,
     error::Result,
-    model::search::{Item, SearchResults},
+    model::search::{Item, SearchQuery, SearchResults},
     query_list,
 };
 
@@ -11,12 +11,16 @@ use super::{Client, Endpoint};
 
 impl Endpoint for SearchEndpoint {}
 
-// TODO better search queries (the `q` property in https://api.spotify.com/v1/search)
-pub fn search(query: impl Into<String>, item_types: &[Item]) -> SearchEndpoint {
+/// Search for an item. The query can be either a string or
+/// [`SearchQuery`](crate::model::search::SearchQuery). More details about
+/// search queries can be found
+/// [here](https://developer.spotify.com/documentation/web-api/reference/search).
+pub fn search(query: impl Into<SearchQuery>, item_types: &[Item]) -> SearchEndpoint {
     let r#type = query_list(item_types);
+    let query = query.into().to_string();
 
     SearchEndpoint {
-        query: query.into(),
+        query,
         r#type,
         ..Default::default()
     }
@@ -62,6 +66,12 @@ impl SearchEndpoint {
     /// By default externally hosted audio content is marked as unplayable in the response.
     pub fn include_external(mut self, include_external: bool) -> Self {
         self.include_external = Some(include_external);
+        self
+    }
+
+    /// Allows you to change the types of items to search.
+    pub fn item_types(mut self, item_types: &[Item]) -> Self {
+        self.r#type = query_list(item_types);
         self
     }
 

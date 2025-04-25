@@ -29,7 +29,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Whether or not to automatically refresh the token when it expires.
     let auto_refresh = true;
 
-
     // You will need to redirect the user to this URL.
     let (client, url) = AuthCodeClient::new(
         "client_id",

@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Field, ItemStruct, LitStr};
+use syn::{Field, ItemStruct, LitStr, parse_macro_input};
 
 #[proc_macro_attribute]
 pub fn docs(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -79,39 +79,59 @@ pub(crate) fn docs_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 fn field_documentation(field_name: &str, name: &str) -> Option<proc_macro2::TokenStream> {
     match field_name {
-        "available_markets" => format_some!("The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) codes for the markets in which the {name} is available."),
+        "available_markets" => format_some!(
+            "The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) codes for the markets in which the {name} is available."
+        ),
 
-        "external_urls" =>format_some!("Known external URLs for the {name}."),
+        "external_urls" => format_some!("Known external URLs for the {name}."),
 
-        "href" => format_some!("A link to the Spotify Web API endpoint providing full details of the {name}."),
+        "href" => format_some!(
+            "A link to the Spotify Web API endpoint providing full details of the {name}."
+        ),
 
-        "id" => format_some!("The [Spotify ID](https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids) for the {name}."),
+        "id" => format_some!(
+            "The [Spotify ID](https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids) for the {name}."
+        ),
 
         "r#type" | "type" => format_some!("The object type. Allowed values: `{name}`."),
 
-        "uri" => format_some!("The [Spotify URI](https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids) for the {name}."),
+        "uri" => format_some!(
+            "The [Spotify URI](https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids) for the {name}."
+        ),
 
         "copyrights" => format_some!("The copyright statements of the {name}."),
 
         "external_ids" => format_some!("Known external IDs for the {name}."),
 
-        "images" => format_some!("The cover art for the {name} in various sizes, with the widest first."),
+        "images" => {
+            format_some!("The cover art for the {name} in various sizes, with the widest first.")
+        }
 
         "name" => format_some!("The name of the {name}."),
 
         "release_date" => format_some!("The date the {name} was first released."),
 
-        "release_date_precision" => format_some!("The precision with which the `release_date` field is known."),
+        "release_date_precision" => {
+            format_some!("The precision with which the `release_date` field is known.")
+        }
 
         "description" => format_some!("A text description of the {name}."),
 
-        "html_description" => format_some!("A description of the {name} that may contain HTML tags."),
+        "html_description" => {
+            format_some!("A description of the {name} that may contain HTML tags.")
+        }
 
-        "restrictions" => format_some!("Included in the response when a content restriction is applied."),
+        "restrictions" => {
+            format_some!("Included in the response when a content restriction is applied.")
+        }
 
-        "explicit" => format_some!("Whether or not the {name} contains explicit content.\n\nNote: `false` can also mean *unknown*."),
+        "explicit" => format_some!(
+            "Whether or not the {name} contains explicit content.\n\nNote: `false` can also mean *unknown*."
+        ),
 
-        "languages" => format_some!("A list of [ISO 639](https://en.wikipedia.org/wiki/ISO_639) codes for the languages spoken in the {name}."),
+        "languages" => format_some!(
+            "A list of [ISO 639](https://en.wikipedia.org/wiki/ISO_639) codes for the languages spoken in the {name}."
+        ),
 
         "media_type" => format_some!("The type of the media of the {name}."),
 
@@ -119,9 +139,13 @@ fn field_documentation(field_name: &str, name: &str) -> Option<proc_macro2::Toke
 
         "duration_ms" => format_some!("The duration of the {name} in miliseconds."),
 
-        "is_playable" => format_some!("Indicates whether or not the {name} is playable in the current market."),
+        "is_playable" => {
+            format_some!("Indicates whether or not the {name} is playable in the current market.")
+        }
 
-        "resume_point" => format_some!("The user's latest position in the {name}.\n\nNote: this field is only available if the user is authorised with the `user-read-playback-position` scope."),
+        "resume_point" => format_some!(
+            "The user's latest position in the {name}.\n\nNote: this field is only available if the user is authorised with the `user-read-playback-position` scope."
+        ),
 
         _ => None,
     }

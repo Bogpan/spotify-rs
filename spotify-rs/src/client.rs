@@ -554,7 +554,7 @@ impl AuthCodeClient<Token> {
 
         // This is just a bogus request to check if the token is valid.
         let res = http
-            .get(format!("{API_URL}/recommendations/available-genre-seeds"))
+            .get(format!("{API_URL}/markets"))
             .bearer_auth(token.secret())
             .header(CONTENT_LENGTH, 0)
             .send()

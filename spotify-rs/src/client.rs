@@ -107,7 +107,12 @@ impl Client<Token, UnknownFlow> {
             req = req.add_scopes(scopes.0);
         }
 
-        let token = req.request_async(async_http_client).await?.set_timestamps();
+        let mut token = req.request_async(async_http_client).await?.set_timestamps();
+        if token.refresh_token.is_none() {
+            // "When a refresh token is not returned, continue using the existing token."
+            // https://developer.spotify.com/documentation/web-api/tutorials/refreshing-tokens
+            token.refresh_token = Some(refresh_token);
+        }
 
         Ok(Self {
             auto_refresh,

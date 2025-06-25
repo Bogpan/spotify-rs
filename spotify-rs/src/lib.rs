@@ -173,7 +173,9 @@ pub mod model;
 use client::Body;
 use serde::{Deserialize, Deserializer};
 
-pub use auth::{AuthCodePkceFlow, ClientCredsFlow, Token, Unauthenticated};
+pub use auth::{
+    AuthCodeFlow, AuthCodePkceFlow, AuthFlow, ClientCredsFlow, Token, Unauthenticated, UnknownFlow,
+};
 pub use client::{AuthCodeClient, AuthCodePkceClient, ClientCredsClient};
 pub use error::{Error, Result as SpotifyResult};
 pub use oauth2::RedirectUrl;

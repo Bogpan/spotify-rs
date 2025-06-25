@@ -75,7 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
-You can find more examples in the [examples](examples) directory.
+You can find more examples in the [examples](spotify-rs/examples) directory.
 Detailed information is available in the [API documentation](https://docs.rs/spotify-rs/).
 
 ## License

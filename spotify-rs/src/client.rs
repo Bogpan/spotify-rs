@@ -203,7 +203,7 @@ impl<F: AuthFlow> Client<Token, F> {
         query: Option<P>,
         body: Option<Body<P>>,
     ) -> Result<T> {
-        let (token_expired, secret) = {
+        let (token_expired, mut secret) = {
             let lock = self
                 .auth_state
                 .read()
@@ -222,6 +222,7 @@ impl<F: AuthFlow> Client<Token, F> {
                     .auth_state
                     .read()
                     .expect("The lock holding the token has been poisoned.");
+                secret = lock.access_token.secret().to_owned();
 
                 info!("The token has been successfully refreshed. The new token will expire in {} seconds", lock.expires_in);
             } else {

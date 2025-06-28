@@ -178,12 +178,15 @@ impl<F: AuthFlow> Client<Token, F> {
             refresh_token.clone()
         };
 
-        let token = self
+        let mut token = self
             .oauth
             .exchange_refresh_token(&refresh_token)
             .request_async(async_http_client)
             .await?
             .set_timestamps();
+        if token.refresh_token.is_none() {
+            token.refresh_token = Some(refresh_token);
+        }
 
         let mut lock = self
             .auth_state
@@ -200,7 +203,7 @@ impl<F: AuthFlow> Client<Token, F> {
         query: Option<P>,
         body: Option<Body<P>>,
     ) -> Result<T> {
-        let (token_expired, secret) = {
+        let (token_expired, mut secret) = {
             let lock = self
                 .auth_state
                 .read()
@@ -219,6 +222,7 @@ impl<F: AuthFlow> Client<Token, F> {
                     .auth_state
                     .read()
                     .expect("The lock holding the token has been poisoned.");
+                secret = lock.access_token.secret().to_owned();
 
                 info!("The token has been successfully refreshed. The new token will expire in {} seconds", lock.expires_in);
             } else {
